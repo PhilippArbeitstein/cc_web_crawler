@@ -4,6 +4,7 @@ import org.jsoup.nodes.Element;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class Crawler {
     private final String url;
@@ -35,14 +36,29 @@ public class Crawler {
     public void runCrawl(String urlToCrawl) {
         Document crawledDom = crawlUrl(urlToCrawl);
         if (crawledDom == null) return;
+
         reportWriter.printLinkAndDepthInformation(urlToCrawl, currentDepth, false);
         getAllHeadingsFromDom(crawledDom);
-        getAllLinksFromDom(crawledDom);
+        getAllValidLinksFromDom(crawledDom);
+
+        visitedUrls.add(urlToCrawl);
     }
 
-    private void getAllLinksFromDom(Document crawledDom) {
+    private ArrayList<String> getAllValidLinksFromDom(Document crawledDom) {
+        ArrayList<String> allPossibleLinks = new ArrayList<>();
+        for (Element links : crawledDom.select("a")) {
+            allPossibleLinks.add(links.text());
+        }
+
+        // Filter the links based on domains and return the filtered list
+        return filterForLinksInDomain(allPossibleLinks);
     }
 
+    private ArrayList<String> filterForLinksInDomain(ArrayList<String> allPossibleLinks) {
+        return allPossibleLinks.stream()
+                .filter(link -> domains.stream().anyMatch(link::contains))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
 
     private void getAllHeadingsFromDom(Document crawledDom) {
         for (Element heading : crawledDom.select("h1, h2, h3, h4, h5, h6")) {
@@ -53,6 +69,9 @@ public class Crawler {
 
     private Document crawlUrl(String url) {
         try {
+            if (visitedUrls.contains(url)) {
+                return null;
+            }
             return Jsoup.connect(url).get();
         } catch (IOException e) {
             handleBrokenLink(url);
