@@ -1,10 +1,11 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {
         if (args.length > 2) {
             Crawler crawler = generateWebCrawler(args);
-            crawler.startCrawl();
+            crawler.runCrawl(crawler.getUrl());
         } else {
             printHowToUseProgramm();
         }
@@ -25,10 +26,7 @@ public class Main {
     }
 
     private static ArrayList<String> getAllDomains(String[] args) {
-        ArrayList <String> allDomains = new ArrayList<>();
-        for (int i = 2; i < args.length; i++) {
-            allDomains.add(args[i]);
-        }
+        ArrayList<String> allDomains = new ArrayList<>(Arrays.asList(args).subList(2, args.length));
         return allDomains;
     }
 }
