@@ -20,10 +20,30 @@ This project implements a **web crawler** in Java that generates a compact overv
 - A modern IDE (Eclipse, IntelliJ IDEA, Visual Studio Code, etc.)
 
 
-### 1. Clone the Repository 🚢
-
+### 1. Clone the Repository 
 Clone the project from GitHub (or GitLab/BitBucket):
 
 ```bash
 git clone https://github.com/yourusername/web-crawler.git
-cd web-crawler ```
+cd web-crawler
+
+
+### 2. Build the Project
+You can use Maven to build the project:
+
+```bash
+mvn clean install
+
+
+### 3. Running the Application
+To run the crawler, navigate to the project directory and use the following command:
+
+```bash
+mvn exec:java -Dexec.args="http://example.com 2 example.com,example.org"
+
+This will start the crawler with:
+- URL: http://example.com
+- Depth: 2
+- Domains: example.com,example.org
+
+
