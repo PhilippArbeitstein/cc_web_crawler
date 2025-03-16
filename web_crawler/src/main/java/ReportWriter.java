@@ -35,9 +35,9 @@ public class ReportWriter {
 
     public void printLinkAndDepthInformation(String link, int currentDepth, boolean isBrokenLink) {
         if (isBrokenLink) {
-            appendToReport("<br>" + "-".repeat(currentDepth) + "> broken link <a>" + link + "</a>");
+            appendToReport("<br>" + "-".repeat(currentDepth) + "> broken link <a>" + link + " </a>");
         } else {
-            appendToReport("<br>" + "-".repeat(currentDepth) + "> link to <a>" + link + "</a>");
+            appendToReport("<br>" + "-".repeat(currentDepth) + "> link to <a>" + link + " </a>");
         }
         appendToReport("<br>depth:" + currentDepth);
     }
