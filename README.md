@@ -1,6 +1,8 @@
 # Web Crawler 🕸️
-## Philipp Arbeitstein [12205666]
-## Philipp Kaiser [12203588]
+
+## Team Members
+- Philipp Arbeitstein [12205666]
+- Philipp Kaiser [12203588]
 
 ## Overview 🌐
 This project implements a **web crawler** in Java that generates a compact overview of a given website and its linked pages. The crawler collects information such as headings and URLs from a website, ensuring that only the specified **depth** and **domains** are crawled.
