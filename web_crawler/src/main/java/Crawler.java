@@ -38,31 +38,53 @@ public class Crawler {
             return;  // Stop if we've reached the maximum depth
         }
 
+        String normalizedUrl = normalizeUrl(urlToCrawl);
+
+        if (visitedUrls.contains(normalizedUrl)) {
+            return;     // Don't crawl if already visited
+        }
+
+
         Document crawledDom = crawlUrl(urlToCrawl);
         if (crawledDom == null) return;
 
-        visitedUrls.add(urlToCrawl);
+        // Mark as visited AFTER successfully crawling
+        visitedUrls.add(normalizedUrl);
         reportWriter.printLinkAndDepthInformation(urlToCrawl, currentDepth, false);
 
         getAllHeadingsFromDom(crawledDom);
 
-        ArrayList<String> validLinksToCrawl = getAllValidLinksFromDom(crawledDom);
+        // Only proceed to deeper links if we haven't reached max depth
+        if (currentDepth < depth) {
+            ArrayList<String> validLinksToCrawl = getAllValidLinksFromDom(crawledDom);
 
-        currentDepth++;
-        validLinksToCrawl.forEach(link -> runCrawl(link));
-        currentDepth--;
+            // Increment depth for child links
+            currentDepth++;
+            for (String link : validLinksToCrawl) {
+                runCrawl(link);
+            }
+            currentDepth--;
+        }
     }
+
+    private String normalizeUrl(String url) {
+        // Remove trailing slash if present
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+        return url;
+    }
+
 
     private ArrayList<String> getAllValidLinksFromDom(Document crawledDom) {
         return crawledDom.select("a[href]")
                 .stream()
-                .map(link -> link.attr("href"))
-                .filter(link -> (link.startsWith("http://") || link.startsWith("https://"))
-                        && domains.stream().anyMatch(link::contains))
+                .map(link -> link.attr("abs:href")) // Use absolute URLs
+                .filter(link -> !link.isEmpty() &&
+                        domains.stream().anyMatch(domain -> link.contains(domain)))
+                .filter(link -> !visitedUrls.contains(normalizeUrl(link))) // Use normalized URLs for comparison
                 .collect(Collectors.toCollection(ArrayList::new));
     }
-
-
 
     private void getAllHeadingsFromDom(Document crawledDom) {
         for (Element heading : crawledDom.select("h1, h2, h3, h4, h5, h6")) {
