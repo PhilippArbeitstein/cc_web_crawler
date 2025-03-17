@@ -10,8 +10,8 @@ public class ReportWriter {
         clearFile();
     }
 
-    public void writeHeadingIntoReport(String headingText, int level, int currentDepth) {
-        String markdownHeading = "#".repeat(level) + " \t" + "-".repeat(currentDepth) + "> \t" + headingText;
+    public void writeHeadingIntoReport(String headingText, int headingLevel, int currentDepth) {
+        String markdownHeading = "#".repeat(headingLevel) + " \t" + "-".repeat(currentDepth) + "> \t" + headingText;
         appendToReport(markdownHeading);
     }
 

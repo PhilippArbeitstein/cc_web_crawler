@@ -8,20 +8,19 @@ import java.util.stream.Collectors;
 
 public class Crawler {
     private final String url;
-    private final int depth;
-    private final ArrayList<String> domains;
-    private ArrayList<String> visitedUrls;
-    private final String reportPath;
+    private final int maxDepth;
+    private final ArrayList<String> crawlableDomains;
+    private final ArrayList<String> visitedUrls;
     private int currentDepth;
-    private ReportWriter reportWriter;
+    private final ReportWriter reportWriter;
 
-    public Crawler(String url, int depth, ArrayList<String> domains) {
+    public Crawler(String url, int maxDepth, ArrayList<String> crawlableDomains) {
         this.url = url;
-        this.depth = depth;
-        this.domains = domains;
+        this.maxDepth = maxDepth;
+        this.crawlableDomains = crawlableDomains;
         currentDepth = 1;
         visitedUrls = new ArrayList<>();
-        reportPath = "report.md";
+        String reportPath = "report.md";
         reportWriter = new ReportWriter(reportPath);
         printCrawlerInformation();
     }
@@ -29,73 +28,41 @@ public class Crawler {
     private void printCrawlerInformation() {
         System.out.println("Crawler Information");
         System.out.println("\tURL: " + this.url);
-        System.out.println("\tDepth: " + this.depth);
-        System.out.println("\tDomains: " + this.domains);
+        System.out.println("\tDepth: " + this.maxDepth);
+        System.out.println("\tDomains: " + this.crawlableDomains);
     }
 
     public void runCrawl(String urlToCrawl) {
-        if (currentDepth > depth) {
-            return;  // Stop if we've reached the maximum depth
-        }
-
         String normalizedUrl = normalizeUrl(urlToCrawl);
+        if (isMaxDepthReached() || hasUrlBeenVisited(normalizedUrl)) return;
 
-        if (visitedUrls.contains(normalizedUrl)) {
-            return;     // Don't crawl if already visited
-        }
+        Document fetchedDom = crawlUrl(urlToCrawl);
+        if (isFetchFailed(fetchedDom)) return;
 
-
-        Document crawledDom = crawlUrl(urlToCrawl);
-        if (crawledDom == null) return;
-
-        // Mark as visited AFTER successfully crawling
         visitedUrls.add(normalizedUrl);
         reportWriter.printLinkAndDepthInformation(urlToCrawl, currentDepth, false);
-
-        getAllHeadingsFromDom(crawledDom);
-
-        // Only proceed to deeper links if we haven't reached max depth
-        if (currentDepth < depth) {
-            ArrayList<String> validLinksToCrawl = getAllValidLinksFromDom(crawledDom);
-
-            // Increment depth for child links
-            currentDepth++;
-            for (String link : validLinksToCrawl) {
-                runCrawl(link);
-            }
-            currentDepth--;
-        }
+        writeAllHeadingsIntoReport(fetchedDom);
+        crawlChildLinks(fetchedDom);
     }
 
     private String normalizeUrl(String url) {
-        // Remove trailing slash if present
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
         return url;
     }
 
-
-    private ArrayList<String> getAllValidLinksFromDom(Document crawledDom) {
-        return crawledDom.select("a[href]")
-                .stream()
-                .map(link -> link.attr("abs:href")) // Use absolute URLs
-                .filter(link -> !link.isEmpty() &&
-                        domains.stream().anyMatch(domain -> link.contains(domain)))
-                .filter(link -> !visitedUrls.contains(normalizeUrl(link))) // Use normalized URLs for comparison
-                .collect(Collectors.toCollection(ArrayList::new));
+    private boolean isMaxDepthReached() {
+        return currentDepth > maxDepth;
     }
 
-    private void getAllHeadingsFromDom(Document crawledDom) {
-        for (Element heading : crawledDom.select("h1, h2, h3, h4, h5, h6")) {
-            String headingText = heading.text();
-            reportWriter.writeHeadingIntoReport(headingText, Integer.parseInt(heading.tagName().substring(1)), currentDepth);
-        }
+    private boolean hasUrlBeenVisited(String normalizedUrl) {
+        return visitedUrls.contains(normalizedUrl);
     }
 
     private Document crawlUrl(String url) {
         try {
-            if (visitedUrls.contains(url)) {
+            if (hasUrlBeenVisited(url)) {
                 return null;
             }
             return Jsoup.connect(url).get();
@@ -107,6 +74,64 @@ public class Crawler {
 
     private void handleBrokenLink(String url) {
         reportWriter.printLinkAndDepthInformation(url, currentDepth, true);
+    }
+
+    private static boolean isFetchFailed(Document fetchedDom) {
+        return fetchedDom == null;
+    }
+
+    private void writeAllHeadingsIntoReport(Document crawledDom) {
+        for (Element heading : crawledDom.select("h1, h2, h3, h4, h5, h6")) {
+            processHeading(heading);
+        }
+    }
+
+    private void processHeading(Element heading) {
+        String headingText = heading.text();
+        int headingLevel = Integer.parseInt(heading.tagName().substring(1));
+        reportWriter.writeHeadingIntoReport(headingText, headingLevel, currentDepth);
+    }
+
+    private void crawlChildLinks(Document fetchedDom) {
+        if (isMaxDepthReached()) {
+            return;
+        }
+
+        currentDepth++;
+        crawlValidLinks(fetchedDom);
+        currentDepth--;
+    }
+
+    private void crawlValidLinks(Document fetchedDom) {
+        ArrayList<String> validLinks = getAllValidLinksFromDom(fetchedDom);
+        for (String link : validLinks) {
+            runCrawl(link);
+        }
+    }
+
+    private ArrayList<String> getAllValidLinksFromDom(Document crawledDom) {
+        return crawledDom.select("a[href]")
+                .stream()
+                .map(this::getAbsoluteUrl)
+                .filter(this::isValidLink)
+                .filter(this::isLinkNotVisited)
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    private String getAbsoluteUrl(Element link) {
+        return link.attr("abs:href");
+    }
+
+    private boolean isValidLink(String link) {
+        return !link.isEmpty() && isCrawlable(link);
+    }
+
+    private boolean isCrawlable(String link) {
+        return crawlableDomains.stream().anyMatch(link::contains);
+    }
+
+    private boolean isLinkNotVisited(String link) {
+        return !hasUrlBeenVisited(normalizeUrl(link));
     }
 
     public String getUrl() {
