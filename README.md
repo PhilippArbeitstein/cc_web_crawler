@@ -67,10 +67,10 @@ Unit tests will be automatically executed, and you will receive a report on the 
 ---
 ## To-Do List Checklist ✅
 Ensure the following requirements are met in the code:
-- [ ] Meaningful Names: All classes, methods, and variables have clear and descriptive names.
-- [ ] Functions: Code is modularized into reusable functions.
+- [x] Meaningful Names: All classes, methods, and variables have clear and descriptive names.
+- [x] Functions: Code is modularized into reusable functions.
 - [ ] Unit Tests: Automated tests are written for each key feature using JUnit.
-- [ ] Comments and Formatting: Code is well-documented with comments, and properly formatted according to Java conventions.
+- [x] Comments and Formatting: Code is well-documented with comments, and properly formatted according to Java conventions.
 - [ ] Objects, Data Structures, and Classes: Appropriate use of objects, classes, and data structures to represent crawled data.
 - [ ] Error Handling and Boundaries: Proper error handling (e.g., invalid URLs, broken links) is in place.
 - [ ] Systems and Emergence: The system behaves as expected in different scenarios, including handling large numbers of URLs.
