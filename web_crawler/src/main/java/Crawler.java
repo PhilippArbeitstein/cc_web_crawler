@@ -6,13 +6,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.stream.Collectors;
 
+/*
+    Participants:
+    - Philipp Arbeitstein [12205666]
+    - Philipp Kaiser []
+ */
+
 public class Crawler {
-    private final String url;
-    private final int maxDepth;
-    private final ArrayList<String> crawlableDomains;
-    private final ArrayList<String> visitedUrls;
-    private int currentDepth;
-    private final ReportWriter reportWriter;
+    protected final String url;
+    protected final int maxDepth;
+    protected final ArrayList<String> crawlableDomains;
+    protected final ArrayList<String> visitedUrls;
+    protected int currentDepth;
+    protected final ReportWriter reportWriter;
 
     public Crawler(String url, int maxDepth, ArrayList<String> crawlableDomains) {
         this.url = url;
@@ -40,27 +46,27 @@ public class Crawler {
         if (isFetchFailed(fetchedDom)) return;
 
         visitedUrls.add(normalizedUrl);
-        reportWriter.printLinkAndDepthInformation(urlToCrawl, currentDepth, false);
+        reportWriter.printLinkAndDepthInformation(urlToCrawl, currentDepth, false); // TODO: flag? eigentlich wenn die blöcke nicht so lange sind kein problem, aber hier eigentlich sehr kurz
         writeAllHeadingsIntoReport(fetchedDom);
         crawlChildLinks(fetchedDom);
     }
 
-    private String normalizeUrl(String url) {
+    protected String normalizeUrl(String url) {
         if (url.endsWith("/")) {
             url = url.substring(0, url.length() - 1);
         }
         return url;
     }
 
-    private boolean isMaxDepthReached() {
+    protected boolean isMaxDepthReached() {
         return currentDepth > maxDepth;
     }
 
-    private boolean hasUrlBeenVisited(String normalizedUrl) {
+    protected boolean hasUrlBeenVisited(String normalizedUrl) {
         return visitedUrls.contains(normalizedUrl);
     }
 
-    private Document crawlUrl(String url) {
+    protected Document crawlUrl(String url) {
         try {
             if (hasUrlBeenVisited(url)) {
                 return null;
@@ -72,27 +78,27 @@ public class Crawler {
         return null;
     }
 
-    private void handleBrokenLink(String url) {
+    protected void handleBrokenLink(String url) {
         reportWriter.printLinkAndDepthInformation(url, currentDepth, true);
     }
 
-    private static boolean isFetchFailed(Document fetchedDom) {
+    protected static boolean isFetchFailed(Document fetchedDom) {
         return fetchedDom == null;
     }
 
-    private void writeAllHeadingsIntoReport(Document crawledDom) {
+    protected void writeAllHeadingsIntoReport(Document crawledDom) {
         for (Element heading : crawledDom.select("h1, h2, h3, h4, h5, h6")) {
             processHeading(heading);
         }
     }
 
-    private void processHeading(Element heading) {
+    protected void processHeading(Element heading) {
         String headingText = heading.text();
         int headingLevel = Integer.parseInt(heading.tagName().substring(1));
         reportWriter.writeHeadingIntoReport(headingText, headingLevel, currentDepth);
     }
 
-    private void crawlChildLinks(Document fetchedDom) {
+    protected void crawlChildLinks(Document fetchedDom) {
         if (isMaxDepthReached()) {
             return;
         }
@@ -102,14 +108,14 @@ public class Crawler {
         currentDepth--;
     }
 
-    private void crawlValidLinks(Document fetchedDom) {
+    protected void crawlValidLinks(Document fetchedDom) {
         ArrayList<String> validLinks = getAllValidLinksFromDom(fetchedDom);
         for (String link : validLinks) {
             runCrawl(link);
         }
     }
 
-    private ArrayList<String> getAllValidLinksFromDom(Document crawledDom) {
+    protected ArrayList<String> getAllValidLinksFromDom(Document crawledDom) {
         return crawledDom.select("a[href]")
                 .stream()
                 .map(this::getAbsoluteUrl)
@@ -118,21 +124,21 @@ public class Crawler {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
-    private String getAbsoluteUrl(Element link) {
+    protected String getAbsoluteUrl(Element link) {
         return link.attr("abs:href");
     }
 
-    private boolean isValidLink(String link) {
+    protected boolean isValidLink(String link) {
         return !link.isEmpty() && isCrawlable(link);
     }
 
-    private boolean isCrawlable(String link) {
+    protected boolean isCrawlable(String link) {
         return crawlableDomains.stream().anyMatch(link::contains);
     }
 
-    private boolean isLinkNotVisited(String link) {
+    protected boolean isLinkNotVisited(String link) {
         return !hasUrlBeenVisited(normalizeUrl(link));
-    }
+    } // TODO: DOES THE SAME THING AS HASURLBBEENVISITED CHANGE!!!
 
     public String getUrl() {
         return url;

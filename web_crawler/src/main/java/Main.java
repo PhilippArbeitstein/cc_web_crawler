@@ -1,9 +1,15 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/*
+    Participants:
+    - Philipp Arbeitstein [12205666]
+    - Philipp Kaiser []
+ */
+
 public class Main {
     public static void main(String[] args) {
-        int argumentCount = args.length;
+        int argumentCount = args.length; // TODO: Maybe constant like: ARGUMENT_COUNT
         if (argumentCount > 2) {
             launchCrawler(args); // TODO: Maybe createAndRunCrawl() instead?
         } else {

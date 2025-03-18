@@ -2,6 +2,12 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 
+/*
+    Participants:
+    - Philipp Arbeitstein [12205666]
+    - Philipp Kaiser []
+ */
+
 public class ReportWriter {
     private final String reportPath;
 
@@ -10,6 +16,7 @@ public class ReportWriter {
         clearFile();
     }
 
+    // TODO: Check if .repeat(headingLevel and so on can be refactored
     public void writeHeadingIntoReport(String headingText, int headingLevel, int currentDepth) {
         String markdownHeading = "#".repeat(headingLevel) + " \t" + "-".repeat(currentDepth) + "> \t" + headingText;
         appendToReport(markdownHeading);
