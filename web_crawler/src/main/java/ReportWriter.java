@@ -22,7 +22,7 @@ public class ReportWriter {
         appendToReport(markdownHeading);
     }
 
-    private void clearFile() {
+    protected void clearFile() {
         try (BufferedWriter ignored = new BufferedWriter(new FileWriter(reportPath, false))) {
         } catch (IOException e) {
             e.printStackTrace();

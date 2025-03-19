@@ -13,8 +13,9 @@ import java.util.stream.Collectors;
  */
 
 public class Crawler {
+    public static final String allHeadings = "h1, h2, h3, h4, h5, h6";
     protected final String url;
-    protected final int maxDepth;
+    protected int maxDepth;
     protected final ArrayList<String> crawlableDomains;
     protected final ArrayList<String> visitedUrls;
     protected int currentDepth;
@@ -46,7 +47,7 @@ public class Crawler {
         if (isFetchFailed(fetchedDom)) return;
 
         visitedUrls.add(normalizedUrl);
-        reportWriter.printLinkAndDepthInformation(urlToCrawl, currentDepth, false); // TODO: flag? eigentlich wenn die blöcke nicht so lange sind kein problem, aber hier eigentlich sehr kurz
+        reportWriter.printLinkAndDepthInformation(urlToCrawl, currentDepth, false);
         writeAllHeadingsIntoReport(fetchedDom);
         crawlChildLinks(fetchedDom);
     }
@@ -59,7 +60,7 @@ public class Crawler {
     }
 
     protected boolean isMaxDepthReached() {
-        return currentDepth > maxDepth;
+        return currentDepth >= maxDepth;
     }
 
     protected boolean hasUrlBeenVisited(String normalizedUrl) {
@@ -87,7 +88,7 @@ public class Crawler {
     }
 
     protected void writeAllHeadingsIntoReport(Document crawledDom) {
-        for (Element heading : crawledDom.select("h1, h2, h3, h4, h5, h6")) {
+        for (Element heading : crawledDom.select(allHeadings)) {
             processHeading(heading);
         }
     }
@@ -99,7 +100,7 @@ public class Crawler {
     }
 
     protected void crawlChildLinks(Document fetchedDom) {
-        if (isMaxDepthReached()) {
+        if (isMaxDepthReached() || fetchedDom == null) {
             return;
         }
 
@@ -120,7 +121,7 @@ public class Crawler {
                 .stream()
                 .map(this::getAbsoluteUrl)
                 .filter(this::isValidLink)
-                .filter(this::isLinkNotVisited)
+                .filter(link -> !hasUrlBeenVisited(normalizeUrl(link)))
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
@@ -136,11 +137,8 @@ public class Crawler {
         return crawlableDomains.stream().anyMatch(link::contains);
     }
 
-    protected boolean isLinkNotVisited(String link) {
-        return !hasUrlBeenVisited(normalizeUrl(link));
-    } // TODO: DOES THE SAME THING AS HASURLBBEENVISITED CHANGE!!!
-
     public String getUrl() {
         return url;
     }
+
 }
