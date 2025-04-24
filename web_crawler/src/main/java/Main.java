@@ -9,9 +9,9 @@ import java.util.Arrays;
 
 public class Main {
     public static void main(String[] args) {
-        int argumentCount = args.length; // TODO: Maybe constant like: ARGUMENT_COUNT
+        int argumentCount = args.length;
         if (argumentCount > 2) {
-            launchCrawler(args); // TODO: Maybe createAndRunCrawl() instead?
+            launchCrawler(args);
         } else {
             printHowToUseProgram();
         }

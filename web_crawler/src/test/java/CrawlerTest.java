@@ -16,27 +16,31 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.*;
 
 class CrawlerTest {
-
     private Crawler crawler;
     private String baseUrl;
     private int maxDepth;
     private ArrayList<String> crawlableDomains;
     private final String UNCRAWLABLE_URL = "https://someurl.com";
-    private final String EMPTY_URL = "";
-
+    private final String documentContent = """
+                <html><body>
+                    <a href='https://www.teigkeller.at/category/all-products'>Valid Link</a>
+                    <a href='/b2b'>Relative Link</a>
+                    <a href='https://teigkeller.at/invalid'>Invalid Domain</a>
+                    <a href=''>Empty Link</a>
+                </body></html>
+                """;
 
     private ReportWriter getMockReportWriter() throws NoSuchFieldException, IllegalAccessException {
-        ReportWriter mockReportWriter = mock(ReportWriter.class);
+        ReportWriter writer = mock(ReportWriter.class);
 
         Field reportWriterField = crawler.getClass().getDeclaredField("reportWriter");
         reportWriterField.setAccessible(true);
-        reportWriterField.set(crawler, mockReportWriter);
-        return mockReportWriter;
+        reportWriterField.set(crawler, writer);
+        return writer;
     }
 
-
     @BeforeEach
-    void setupTestSuite() {
+    void setUp() {
         baseUrl = "https://teigkeller.at";
         maxDepth = 3;
         crawlableDomains = new ArrayList<>();
@@ -46,7 +50,7 @@ class CrawlerTest {
     }
 
     @AfterEach
-    void teardownTestSuite() {
+    void tearDown() {
         baseUrl = "";
         maxDepth = -1;
         crawlableDomains = null;
@@ -54,87 +58,92 @@ class CrawlerTest {
     }
 
     @Test
-    void testGetUrl() {
+    void getInitialBaseUrl() {
         assertEquals(baseUrl, crawler.getUrl());
     }
 
     @Test
-    void testNormalizeUrl() {
+    void normalizeUrlRemovesTrailingSlash() {
         String urlWithSlash = "https://teigkeller.at/";
         String normalizedUrlWithoutSlash = "https://teigkeller.at";
         assertEquals(normalizedUrlWithoutSlash, crawler.normalizeUrl(urlWithSlash));
     }
 
     @Test
-    void testIsMaxDepth1Recognized() {
+    void maxDepthReached() {
         crawler.maxDepth = 1;
         assertTrue(crawler.isMaxDepthReached());
     }
 
     @Test
-    void testIsMaxDepthReached() {
-        assertFalse(crawler.isMaxDepthReached());
-
+    void maxDepthReachedExceedingLimit() {
         crawler.currentDepth = 4;
         assertTrue(crawler.isMaxDepthReached());
     }
 
     @Test
-    void testIsMaxDepthReached2() {
-        assertFalse(crawler.isMaxDepthReached());
-
+    void isMaxDepthReachedWhenWithingLimit() {
         crawler.currentDepth = 2;
         assertFalse(crawler.isMaxDepthReached());
     }
 
+    @Test
+    void isMaxDepthReachedAtInitialDepth() {
+        assertFalse(crawler.isMaxDepthReached());
+    }
 
     @Test
-    void testHasUrlBeenVisited() {
+    void ifUrlNotVisited() {
         assertFalse(crawler.hasUrlBeenVisited(baseUrl));
+    }
 
-        // Simulate that the url has been visited
+    @Test
+    void ifUrlAlreadyVisited() {
         crawler.visitedUrls.add(baseUrl);
         assertTrue(crawler.hasUrlBeenVisited(baseUrl));
     }
 
     @Test
-    void isCrawlable() {
+    void isCrawlableForAllowedDomain() {
         assertTrue(crawler.isCrawlable(baseUrl));
+    }
+
+    @Test
+    void notCrawlableForForbiddenDomain() {
         assertFalse(crawler.isCrawlable(UNCRAWLABLE_URL));
     }
 
     @Test
-    void testIsValidLink() {
+    void isValidLinkForValidUrl() {
         assertTrue(crawler.isValidLink(baseUrl));
+    }
+
+    @Test
+    void isValidLinkForUncrawlableUrl() {
         assertFalse(crawler.isValidLink(UNCRAWLABLE_URL));
+    }
+
+    @Test
+    void isValidLinkForEmptyUrl() {
+        String EMPTY_URL = "";
         assertFalse(crawler.isValidLink(EMPTY_URL));
     }
 
     @Test
-    void testGetAbsoluteUrlFromRelativeLink() {
-        String expectedUrl = "https://teigkeller.at/page2";
-
-        // Create an element with a relative URL
-        Element relativeLink = Jsoup.parse("<a href='/page2'></a>", baseUrl).select("a").first();
-        String result = crawler.getAbsoluteUrl(relativeLink);
-
-        assertEquals(expectedUrl, result, "Relative URL should be converted to absolute URL");
+    void convertsRelativeLinkToAbsolute() {
+        Element link = Jsoup.parse("<a href='/page2'></a>", baseUrl).select("a").first();
+        assertEquals("https://teigkeller.at/page2", crawler.getAbsoluteUrl(link));
     }
 
     @Test
-    void testGetAbsoluteUrlFromAbsoluteLink() {
-        String expectedUrl = "https://teigkeller.at/page2";
-
-        // Create an element with an absolute URL
-        Element absoluteLink = Jsoup.parse("<a href='https://teigkeller.at/page2'></a>").select("a").first();
-        String result = crawler.getAbsoluteUrl(absoluteLink);
-
-        assertEquals(expectedUrl, result, "Absolute URL should remain unchanged");
+    void preserveAbsoluteUrl() {
+        Element link = Jsoup.parse("<a href='https://teigkeller.at/page2'></a>").select("a").first();
+        assertEquals("https://teigkeller.at/page2", crawler.getAbsoluteUrl(link));
     }
 
     @Test
-    void testHandleBrokenLink() throws Exception {
-        ReportWriter mockReportWriter = getMockReportWriter();
+    void reportsBrokenLinkForIOException() throws Exception {
+        ReportWriter writer = getMockReportWriter();
         String brokenUrl = "https://brokenurl.com";
 
         try (var mockedJsoup = mockStatic(Jsoup.class)) {
@@ -144,320 +153,271 @@ class CrawlerTest {
             mockedJsoup.when(() -> Jsoup.connect(brokenUrl)).thenReturn(mockConnection);
 
             crawler.crawlUrl(brokenUrl);
-            verify(mockReportWriter).printLinkAndDepthInformation(brokenUrl, crawler.currentDepth, true);
+            verify(writer).printLinkAndDepthInformation(brokenUrl, crawler.currentDepth, true);
         }
     }
 
     @Test
-    void testIsFetchFailed_DocumentIsNull() {
+    void fetchFailedWhenDocumentIsNull() {
         assertTrue(crawler.isFetchFailed(null), "The fetch should fail when the Document is null.");
     }
 
     @Test
-    void testIsFetchFailed_DocumentIsNotNull() {
+    void fetchFailedWhenDocumentIsNotNull() {
         Document fetchedDom = mock(Document.class);
         assertFalse(crawler.isFetchFailed(fetchedDom), "The fetch should be successfully when the Document is not null.");
     }
 
     @Test
-    void testProcessHeading_H1() throws Exception {
-        String headingText = "Heading 1";
-        Element mockHeading = mock(Element.class);
-        when(mockHeading.text()).thenReturn(headingText);
-        when(mockHeading.tagName()).thenReturn("h1");
+    void processHeadingWritesH1ToReport() throws Exception {
+        Element heading = mock(Element.class);
+        when(heading.text()).thenReturn("Heading 1");
+        when(heading.tagName()).thenReturn("h1");
 
-        ReportWriter mockReportWriter = getMockReportWriter();
-
-        crawler.processHeading(mockHeading);
-        verify(mockReportWriter).writeHeadingIntoReport(headingText, 1, crawler.currentDepth);
+        ReportWriter writer = getMockReportWriter();
+        crawler.processHeading(heading);
+        verify(writer).writeHeadingIntoReport("Heading 1", 1, crawler.currentDepth);
     }
 
     @Test
-    void testWriteAllHeadingsIntoReport() {
-        Document mockDocument = mock(Document.class);
-        Crawler crawlerSpy = spy(crawler); // Create a Mock Crawler to later verify
+    void writeAllHeadingsIntoReport() {
+        Document doc = mock(Document.class);
+        Crawler spy = spy(crawler);
 
-        Element mockHeading1 = mock(Element.class);
-        Element mockHeading2 = mock(Element.class);
-        String headingText1 = "Heading 1";
-        String headingText2 = "Heading 2";
+        Element h1 = mock(Element.class);
+        Element h2 = mock(Element.class);
 
-        when(mockHeading1.text()).thenReturn(headingText1);
-        when(mockHeading2.text()).thenReturn(headingText2);
+        when(h1.text()).thenReturn("H1");
+        when(h2.text()).thenReturn("H2");
+        when(h1.tagName()).thenReturn("h1");
+        when(h2.tagName()).thenReturn("h2");
 
-        when(mockHeading1.tagName()).thenReturn("h1");
-        when(mockHeading2.tagName()).thenReturn("h2");
+        Elements elements = new Elements(h1, h2);
+        when(doc.select(anyString())).thenReturn(elements);
 
-        Elements mockHeadings = new Elements();
-        mockHeadings.add(mockHeading1);
-        mockHeadings.add(mockHeading2);
-
-        when(mockDocument.select(anyString())).thenReturn(mockHeadings);
-        assertNotNull(mockDocument, "Mock document should not be null");
-
-        crawlerSpy.writeAllHeadingsIntoReport(mockDocument);
-
-        verify(crawlerSpy).processHeading(mockHeading1);
-        verify(crawlerSpy).processHeading(mockHeading2);
+        spy.writeAllHeadingsIntoReport(doc);
+        verify(spy).processHeading(h1);
+        verify(spy).processHeading(h2);
     }
 
 
     @Test
-    void testCrawlUrl_ReturnsNullForVisitedUrl() {
-        Crawler crawlerSpy = spy(crawler);
-        doReturn(true).when(crawlerSpy).hasUrlBeenVisited(baseUrl);
+    void returnsNullForAlreadyVisitedUrl() {
+        Crawler spy = spy(crawler);
+        doReturn(true).when(spy).hasUrlBeenVisited(baseUrl);
 
-        Document result = crawlerSpy.crawlUrl(baseUrl);
+        Document result = spy.crawlUrl(baseUrl);
         assertNull(result, "Should return null for already visited URL");
-        verify(crawlerSpy).hasUrlBeenVisited(baseUrl);
+        verify(spy).hasUrlBeenVisited(baseUrl);
     }
 
     @Test
-    void testAllValidLinksFromValidDocument() {
-        Document mockDocument = Jsoup.parse(
-                "<html><body>" +
-                        "<a href='https://www.teigkeller.at/category/all-products'>Valid Link 2</a>" +
-                        "<a href='/b2b'>Relative Link</a>" +
-                        "<a href='https://teigkeller.at/invalid'>Invalid Domain</a>" +
-                        "<a href=''>Empty Link</a>" +
-                        "</body></html>",
-                baseUrl
-        );
+    void getAllValidLinksFromDomWithUnvisitedValidLinks() {
+        Document doc = Jsoup.parse(documentContent, baseUrl);
+        Crawler spy = spy(crawler);
+        spy.visitedUrls.add("https://www.teigkeller.at/category/all-products");
 
-        Crawler crawlerSpy = spy(crawler);
+        doReturn(true).when(spy).isValidLink("https://www.teigkeller.at/category/all-products");
+        doReturn(true).when(spy).isValidLink("/b2b");
+        doReturn(false).when(spy).isValidLink("https://teigkeller.at/invalid");
+        doReturn(false).when(spy).isValidLink("");
 
-        doReturn(true).when(crawlerSpy).isValidLink("https://www.teigkeller.at/category/all-products");
-        doReturn(true).when(crawlerSpy).isValidLink("/b2b");
-        doReturn(false).when(crawlerSpy).isValidLink("https://teigkeller.at/invalid");
-        doReturn(false).when(crawlerSpy).isValidLink("");
+        ArrayList<String> validLinks = spy.getAllValidLinksFromDom(doc);
 
-        crawlerSpy.visitedUrls.add("https://www.teigkeller.at/category/all-products");
-
-        ArrayList<String> validLinks = crawlerSpy.getAllValidLinksFromDom(mockDocument);
-        System.out.println(validLinks);
-
-        assertEquals(2, validLinks.size(), "Should return only valid, unvisited links");
-        assertTrue(validLinks.contains("https://teigkeller.at/b2b"), "Should contain the relative link converted to absolute");
-        assertFalse(validLinks.contains("https://teigkeller.at/category/all-products"), "Should not contain already visited links");
-        assertFalse(validLinks.contains("https://teigkeller.at/invalid"), "Should not contain invalid domain links");
-        assertFalse(validLinks.contains(""), "Should not contain empty links");
+        int validLinksCount = 2;
+        assertEquals(validLinksCount, validLinks.size());
+        assertTrue(validLinks.contains("https://teigkeller.at/b2b"));
     }
 
     @Test
-    void testGetAllValidLinksFromEmptyDocument() {
-        Document emptyDocument = Jsoup.parse("<html><body></body></html>");
-        ArrayList<String> validLinks = crawler.getAllValidLinksFromDom(emptyDocument);
+    void getAllValidLinksFromEmptyDocument() {
+        Document doc = Jsoup.parse("<html><body></body></html>");
+        ArrayList<String> validLinks = crawler.getAllValidLinksFromDom(doc);
         assertTrue(validLinks.isEmpty(), "Should return empty list for document with no links");
     }
 
     @Test
-    void testGetAllValidLinksFromNullDocument() {
-        Document nullDocument = null;
-        assertThrows(NullPointerException.class, () -> crawler.getAllValidLinksFromDom(nullDocument),
+    void getAllValidLinksFromNullDocument() {
+        Document doc = null;
+        assertThrows(NullPointerException.class, () -> crawler.getAllValidLinksFromDom(doc),
                 "Should throw NullPointerException when document is null");
     }
 
     @Test
-    void testCrawlValidLinks() {
-        Document mockDocument = mock(Document.class);
-        Crawler crawlerSpy = spy(crawler);
+    void runCrawlForEachValidLink() {
+        Document doc = mock(Document.class);
+        Crawler spy = spy(crawler);
 
         ArrayList<String> validLinks = new ArrayList<>();
         validLinks.add("https://teigkeller.at/b2b");
         validLinks.add("https://teigkeller.at/category/all-products");
 
-        doReturn(validLinks).when(crawlerSpy).getAllValidLinksFromDom(mockDocument);
+        doReturn(validLinks).when(spy).getAllValidLinksFromDom(doc);
 
         // We don't want to actually run the crawl in our test, so we'll make it do nothing
-        doNothing().when(crawlerSpy).runCrawl(anyString());
+        doNothing().when(spy).runCrawl(anyString());
 
-        crawlerSpy.crawlValidLinks(mockDocument);
+        spy.crawlValidLinks(doc);
 
-        verify(crawlerSpy).runCrawl("https://teigkeller.at/b2b");
-        verify(crawlerSpy).runCrawl("https://teigkeller.at/category/all-products");
-        verify(crawlerSpy).getAllValidLinksFromDom(mockDocument);
+        verify(spy).runCrawl("https://teigkeller.at/b2b");
+        verify(spy).runCrawl("https://teigkeller.at/category/all-products");
+        verify(spy).getAllValidLinksFromDom(doc);
     }
 
     @Test
-    void testCrawlValidLinksNoValidLinks() {
-        Document mockDocument = mock(Document.class);
-        Crawler crawlerSpy = spy(crawler);
+    void crawlValidLinksWhenNoLinksExist() {
+        Document doc = mock(Document.class);
+        Crawler spy = spy(crawler);
 
-        ArrayList<String> validLinks = new ArrayList<>();
+        doReturn(new ArrayList<>()).when(spy).getAllValidLinksFromDom(doc);
 
-        doReturn(validLinks).when(crawlerSpy).getAllValidLinksFromDom(mockDocument);
+        spy.crawlValidLinks(doc);
 
-        crawlerSpy.crawlValidLinks(mockDocument);
-
-        verify(crawlerSpy, never()).runCrawl(anyString());
-        verify(crawlerSpy).getAllValidLinksFromDom(mockDocument);
+        verify(spy, never()).runCrawl(anyString());
     }
 
     @Test
-    void testCrawlValidLinksNullDocument() {
-        Crawler crawlerSpy = spy(crawler);
+    void crawlValidLinksOnNullDocumentThrowsException() {
+        Crawler spy = spy(crawler);
 
-        doThrow(NullPointerException.class).when(crawlerSpy).getAllValidLinksFromDom(null);
-        assertThrows(NullPointerException.class, () -> crawlerSpy.crawlValidLinks(null),
+        doThrow(NullPointerException.class).when(spy).getAllValidLinksFromDom(null);
+        assertThrows(NullPointerException.class, () -> spy.crawlValidLinks(null),
                 "Should throw NullPointerException when document is null");
-        verify(crawlerSpy, never()).runCrawl(anyString());
+        verify(spy, never()).runCrawl(anyString());
     }
 
     @Test
-    void testCrawlChildLinksMaxDepthReached() {
-        Document mockDocument = mock(Document.class);
-        Crawler crawlerSpy = spy(crawler);
+    void crawlValidLinksAbortsWhenMaxDepthReached() {
+        Document doc = mock(Document.class);
+        Crawler spy = spy(crawler);
 
-        doReturn(true).when(crawlerSpy).isMaxDepthReached();
+        doReturn(true).when(spy).isMaxDepthReached();
 
-        int initialDepth = crawlerSpy.currentDepth;
-        crawlerSpy.crawlChildLinks(mockDocument);
+        int initialDepth = spy.currentDepth;
+        spy.crawlChildLinks(doc);
 
 
-        verify(crawlerSpy, never()).crawlValidLinks(any(Document.class));
-        assertEquals(initialDepth, crawlerSpy.currentDepth, "currentDepth should remain unchanged");
-        verify(crawlerSpy).isMaxDepthReached();
+        verify(spy, never()).crawlValidLinks(any(Document.class));
+        assertEquals(initialDepth, spy.currentDepth, "currentDepth should remain unchanged");
+        verify(spy).isMaxDepthReached();
     }
 
     @Test
-    void testCrawlChildLinksMaxDepthNotReached() {
-        Document mockDocument = mock(Document.class);
-        Crawler crawlerSpy = spy(crawler);
+    void crawlValidLinksAbortsWhenMaxDepthNotReached() {
+        Document doc = mock(Document.class);
+        Crawler spy = spy(crawler);
 
-        doReturn(false).when(crawlerSpy).isMaxDepthReached();
+        doReturn(false).when(spy).isMaxDepthReached();
 
-        doNothing().when(crawlerSpy).crawlValidLinks(mockDocument);
+        doNothing().when(spy).crawlValidLinks(doc);
 
-        int initialDepth = crawlerSpy.currentDepth;
+        int initialDepth = spy.currentDepth;
 
-        crawlerSpy.crawlChildLinks(mockDocument);
-        verify(crawlerSpy).crawlValidLinks(mockDocument);
-        assertEquals(initialDepth, crawlerSpy.currentDepth, "currentDepth should be restored to initial value");
-        verify(crawlerSpy).isMaxDepthReached();
+        spy.crawlChildLinks(doc);
+        verify(spy).crawlValidLinks(doc);
+        assertEquals(initialDepth, spy.currentDepth, "currentDepth should be restored to initial value");
+        verify(spy).isMaxDepthReached();
     }
 
     @Test
-    void testCrawlChildLinksWithNullDocument() {
-        Crawler crawlerSpy = spy(crawler);
-        doReturn(false).when(crawlerSpy).isMaxDepthReached();
+    void crawlChildLinksIgnoresNullDocument() {
+        Crawler spy = spy(crawler);
+        doReturn(false).when(spy).isMaxDepthReached();
 
-        int initialDepth = crawlerSpy.currentDepth;
-        crawlerSpy.crawlChildLinks(null);
+        int initialDepth = spy.currentDepth;
+        spy.crawlChildLinks(null);
 
-        verify(crawlerSpy, never()).crawlValidLinks(null);
-        assertEquals(initialDepth, crawlerSpy.currentDepth, "currentDepth should be restored to initial value");
-        verify(crawlerSpy).isMaxDepthReached();
+        verify(spy, never()).crawlValidLinks(null);
+        assertEquals(initialDepth, spy.currentDepth, "currentDepth should be restored to initial value");
+        verify(spy).isMaxDepthReached();
     }
 
     @Test
-    void testCrawlChildLinksDepthIncrementAndDecrement() {
-        Document mockDocument = mock(Document.class);
-        Crawler crawlerSpy = spy(crawler);
+    void crawlChildLinksIncrementsAndDecrementsDepthCorrectly() {
+        Document doc = mock(Document.class);
+        Crawler spy = spy(crawler);
 
-        doReturn(false).when(crawlerSpy).isMaxDepthReached();
+        doReturn(false).when(spy).isMaxDepthReached();
 
         doAnswer(invocation -> {
-            assertEquals(crawlerSpy.currentDepth, 2, "Depth should be incremented during crawlValidLinks");
+            assertEquals(spy.currentDepth, 2, "Depth should be incremented during crawlValidLinks");
             return null;
-        }).when(crawlerSpy).crawlValidLinks(mockDocument);
+        }).when(spy).crawlValidLinks(doc);
 
-        assertEquals(1, crawlerSpy.currentDepth, "Initial depth should be 1");
-        crawlerSpy.crawlChildLinks(mockDocument);
-        assertEquals(1, crawlerSpy.currentDepth, "currentDepth should be restored to 1");
+        assertEquals(1, spy.currentDepth, "Initial depth should be 1");
+        spy.crawlChildLinks(doc);
+        assertEquals(1, spy.currentDepth, "currentDepth should be restored to 1");
     }
 
     @Test
-    void testRunCrawlMaxDepthReached() {
+    void runCrawlDoesNothingIfMaxDepthReached() {
         String testUrl = "https://teigkeller.at/";
         String normalizedUrl = "https://teigkeller.at";
-        Crawler crawlerSpy = spy(crawler);
+        Crawler spy = spy(crawler);
 
-        doReturn(true).when(crawlerSpy).isMaxDepthReached();
-        doReturn(normalizedUrl).when(crawlerSpy).normalizeUrl(testUrl);
+        doReturn(true).when(spy).isMaxDepthReached();
+        doReturn(normalizedUrl).when(spy).normalizeUrl(testUrl);
 
-        crawlerSpy.runCrawl(testUrl);
+        spy.runCrawl(testUrl);
 
-        verify(crawlerSpy).isMaxDepthReached();
-        verify(crawlerSpy).normalizeUrl(testUrl);
-        verify(crawlerSpy, never()).hasUrlBeenVisited(normalizedUrl);
-        verify(crawlerSpy, never()).crawlUrl(anyString());
-        verify(crawlerSpy, never()).writeAllHeadingsIntoReport(any(Document.class));
-        verify(crawlerSpy, never()).crawlChildLinks(any(Document.class));
-        assertFalse(crawlerSpy.visitedUrls.contains(normalizedUrl), "URL should not be added to visited URLs");
+        verify(spy).isMaxDepthReached();
+        verify(spy, never()).crawlUrl(anyString());
+
+        assertFalse(spy.visitedUrls.contains(normalizedUrl), "URL should not be added to visited URLs");
     }
 
     @Test
-    void testRunCrawl_UrlAlreadyVisited() throws Exception {
+    void runCrawlSkipsIfUrlAlreadyVisited() {
         String testUrl = "https://teigkeller.at/";
         String normalizedUrl = "https://teigkeller.at";
-        Crawler crawlerSpy = spy(crawler);
-        ReportWriter mockReportWriter = getMockReportWriter();
+        Crawler spy = spy(crawler);
 
-        doReturn(false).when(crawlerSpy).isMaxDepthReached();
-        doReturn(normalizedUrl).when(crawlerSpy).normalizeUrl(testUrl);
-        doReturn(true).when(crawlerSpy).hasUrlBeenVisited(normalizedUrl);
+        doReturn(false).when(spy).isMaxDepthReached();
+        doReturn(normalizedUrl).when(spy).normalizeUrl(testUrl);
+        doReturn(true).when(spy).hasUrlBeenVisited(normalizedUrl);
 
-        crawlerSpy.runCrawl(testUrl);
+        spy.runCrawl(testUrl);
 
-        verify(crawlerSpy).isMaxDepthReached();
-        verify(crawlerSpy).normalizeUrl(testUrl);
-        verify(crawlerSpy).hasUrlBeenVisited(normalizedUrl);
-        verify(crawlerSpy, never()).crawlUrl(anyString());
-        verify(mockReportWriter, never()).printLinkAndDepthInformation(anyString(), anyInt(), anyBoolean());
-        verify(crawlerSpy, never()).writeAllHeadingsIntoReport(any(Document.class));
-        verify(crawlerSpy, never()).crawlChildLinks(any(Document.class));
+        verify(spy).hasUrlBeenVisited(normalizedUrl);
+        verify(spy, never()).crawlUrl(anyString());
     }
 
     @Test
-    void testRunCrawlFetchFailed() {
+    void runCrawlDoesNothingWhenFetchFails() {
         String testUrl = "https://teigkeller.at/";
         String normalizedUrl = "https://teigkeller.at";
-        Crawler crawlerSpy = spy(crawler);
+        Crawler spy = spy(crawler);
 
-        doReturn(normalizedUrl).when(crawlerSpy).normalizeUrl(testUrl);
-        doReturn(false).when(crawlerSpy).isMaxDepthReached();
-        doReturn(false).when(crawlerSpy).hasUrlBeenVisited(normalizedUrl);
-        doReturn(null).when(crawlerSpy).crawlUrl(testUrl);
+        doReturn(normalizedUrl).when(spy).normalizeUrl(testUrl);
+        doReturn(false).when(spy).isMaxDepthReached();
+        doReturn(false).when(spy).hasUrlBeenVisited(normalizedUrl);
+        doReturn(null).when(spy).crawlUrl(testUrl);
 
-        crawlerSpy.runCrawl(testUrl);
+        spy.runCrawl(testUrl);
 
-        verify(crawlerSpy).isMaxDepthReached();
-        verify(crawlerSpy).normalizeUrl(testUrl);
-        verify(crawlerSpy).hasUrlBeenVisited(normalizedUrl);
-        verify(crawlerSpy).crawlUrl(testUrl);
-        verify(crawlerSpy, never()).writeAllHeadingsIntoReport(any(Document.class));
-        verify(crawlerSpy, never()).crawlChildLinks(any(Document.class));
+        verify(spy).crawlUrl(testUrl);
+        verify(spy, never()).writeAllHeadingsIntoReport(any(Document.class));
+        verify(spy, never()).crawlChildLinks(any(Document.class));
     }
 
     @Test
-    void testRunCrawlSuccessfulCrawl() throws Exception {
+    void runCrawlExecutesFullFlowWhenSuccessful() {
         String testUrl = "https://teigkeller.at/";
         String normalizedUrl = "https://teigkeller.at";
-        Crawler crawlerSpy = spy(crawler);
-        Document mockDocument = Jsoup.parse(
-                "<html><body>" +
-                        "<a href='https://www.teigkeller.at/category/all-products'>Valid Link 2</a>" +
-                        "<a href='/b2b'>Relative Link</a>" +
-                        "<a href='https://teigkeller.at/invalid'>Invalid Domain</a>" +
-                        "<a href=''>Empty Link</a>" +
-                        "</body></html>",
-                baseUrl
-        );
+        Crawler spy = spy(crawler);
+        Document doc = Jsoup.parse(documentContent, baseUrl);
 
-        doReturn(normalizedUrl).when(crawlerSpy).normalizeUrl(testUrl);
-        doReturn(false).when(crawlerSpy).isMaxDepthReached();
-        doReturn(false).when(crawlerSpy).hasUrlBeenVisited(normalizedUrl);
-        doReturn(mockDocument).when(crawlerSpy).crawlUrl(testUrl);
-        doNothing().when(crawlerSpy).writeAllHeadingsIntoReport(mockDocument);
-        doNothing().when(crawlerSpy).crawlChildLinks(mockDocument);
+        doReturn(normalizedUrl).when(spy).normalizeUrl(testUrl);
+        doReturn(false).when(spy).isMaxDepthReached();
+        doReturn(false).when(spy).hasUrlBeenVisited(normalizedUrl);
+        doReturn(doc).when(spy).crawlUrl(testUrl);
+        doNothing().when(spy).writeAllHeadingsIntoReport(doc);
+        doNothing().when(spy).crawlChildLinks(doc);
 
-        crawlerSpy.runCrawl(testUrl);
+        spy.runCrawl(testUrl);
 
-        verify(crawlerSpy).normalizeUrl(testUrl);
-        verify(crawlerSpy).isMaxDepthReached();
-        verify(crawlerSpy).hasUrlBeenVisited(normalizedUrl);
-        verify(crawlerSpy).crawlUrl(testUrl);
-        verify(crawlerSpy).writeAllHeadingsIntoReport(mockDocument);
-        verify(crawlerSpy).crawlChildLinks(mockDocument);
+        verify(spy).crawlUrl(testUrl);
+        verify(spy).writeAllHeadingsIntoReport(doc);
+        verify(spy).crawlChildLinks(doc);
     }
 }

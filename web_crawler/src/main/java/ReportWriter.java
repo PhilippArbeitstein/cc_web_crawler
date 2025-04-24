@@ -16,7 +16,6 @@ public class ReportWriter {
         clearFile();
     }
 
-    // TODO: Check if .repeat(headingLevel and so on can be refactored
     public void writeHeadingIntoReport(String headingText, int headingLevel, int currentDepth) {
         String markdownHeading = "#".repeat(headingLevel) + " \t" + "-".repeat(currentDepth) + "> \t" + headingText;
         appendToReport(markdownHeading);
