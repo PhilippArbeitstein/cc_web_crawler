@@ -5,7 +5,7 @@ import java.io.IOException;
 /*
     Participants:
     - Philipp Arbeitstein [12205666]
-    - Philipp Kaiser []
+    - Philipp Kaiser [12203588]
  */
 
 public class ReportWriter {
