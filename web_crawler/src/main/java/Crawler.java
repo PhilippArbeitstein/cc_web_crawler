@@ -60,7 +60,7 @@ public class Crawler {
     }
 
     protected boolean isMaxDepthReached() {
-        return currentDepth >= maxDepth; // TODO: maybe back to > ? currently going one level less deep than expected
+        return currentDepth >= maxDepth;
     }
 
     protected boolean hasUrlBeenVisited(String normalizedUrl) {
