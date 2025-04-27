@@ -43,16 +43,17 @@ mvn clean install
 To run the crawler, navigate to the project directory and use the following command:
 
 ```bash
-mvn exec:java -Dexec.args="http://example.com 2 example.com,example.org"
+mvn exec:java -Dexec.args="https://www.tomshotstuff.at 4 tomshotstuff.at shop.tomshotstuff.at"
 ```
 
 This will start the crawler with:
-- URL: http://example.com
-- Depth: 2
-- Domains: example.com,example.org
+- URL: https://www.tomshotstuff.at
+- Depth: 4
+- Domains: tomshotstuff.at shop.tomshotstuff.at
 
 The crawler will crawl up to the specified depth and collect information from the listed domains.
 
+#### There is a run configuration provided under .idea/runConfigurations running the above
 
 ### 4. Running Unit Tests
 To run unit tests, use Maven:
