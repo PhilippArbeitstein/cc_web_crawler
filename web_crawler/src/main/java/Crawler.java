@@ -21,14 +21,14 @@ public class Crawler {
     protected int currentDepth;
     protected final ReportWriter reportWriter;
 
-    public Crawler(String url, int maxDepth, ArrayList<String> crawlableDomains) {
+
+    public Crawler(String url, int maxDepth, ArrayList<String> crawlableDomains, ReportWriter reportWriter) {
         this.url = url;
         this.maxDepth = maxDepth;
         this.crawlableDomains = crawlableDomains;
+        this.reportWriter = reportWriter;
         currentDepth = 1;
         visitedUrls = new ArrayList<>();
-        String reportPath = "report.md";
-        reportWriter = new ReportWriter(reportPath);
         printCrawlerInformation();
     }
 
