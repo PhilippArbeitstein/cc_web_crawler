@@ -8,9 +8,12 @@ import java.util.Arrays;
  */
 
 public class Main {
+
+    private static final Integer MIN_REQUIRED_ARGUMENTS = 2;
+
     public static void main(String[] args) {
         int argumentCount = args.length;
-        if (argumentCount > 2) {
+        if (argumentCount > MIN_REQUIRED_ARGUMENTS) {
             launchCrawler(args);
         } else {
             printHowToUseProgram();
