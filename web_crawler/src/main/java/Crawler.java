@@ -43,6 +43,21 @@ public class Crawler {
         String normalizedUrl = normalizeUrl(urlToCrawl);
         if (isMaxDepthReached() || hasUrlBeenVisited(normalizedUrl)) return;
 
+        /*
+      Queue<String> queue = new LinkedList<>();
+
+        List<Future<CrawlResult>> result = new ArrayList<>(); // TODO: CrawlResult mit Liste aller gefetchten URLs bzw. deren Ergebnisse
+
+
+        for (String domain : crawlableDomains) {
+            if (!normalizedUrl.contains(domain)) {
+                Future<CrawlResult> future = executorService.submit(() -> {
+                    return crawlUrl(urlToCrawl);
+                });
+                result.add(future);
+            }
+        }
+*/
         Document fetchedDom = crawlUrl(urlToCrawl);
         if (isFetchFailed(fetchedDom)) return;
 
