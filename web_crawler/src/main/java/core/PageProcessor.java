@@ -10,12 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PageProcessor {
-
     private final PageLoader fetcher;
     private final int htmlNumberOfHeadings = 6;
 
-    public PageProcessor(PageLoader fetcher) {
-        this.fetcher = fetcher;
+    public PageProcessor(PageLoader pageLoader) {
+        this.fetcher = pageLoader;
     }
 
     public CrawlResult processPage(String url, int depth) {

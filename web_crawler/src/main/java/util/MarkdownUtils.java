@@ -24,9 +24,6 @@ public class MarkdownUtils {
     }
 
     protected static boolean isLinkBroken(String link, List<CrawlResult> pages) {
-        // We iterate over all pages in the list, and check if the link points to any of them
-        // If it does, then we return whether or not that page is broken
-        // This can only return true for pages that have been crawled, all uncrawled pages are always returned as not broken
         return pages.stream()
                 .filter(p -> p.pageUrl.equals(link))
                 .anyMatch(p -> p.isFetchFailed);
