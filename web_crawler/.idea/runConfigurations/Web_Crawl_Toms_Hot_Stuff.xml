@@ -1,8 +1,8 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Web Crawl Toms Hot Stuff" type="Application" factoryName="Application">
-    <option name="MAIN_CLASS_NAME" value="Main" />
+    <option name="MAIN_CLASS_NAME" value="core.Main" />
     <module name="web_crawler" />
-    <option name="PROGRAM_PARAMETERS" value="https://www.tomshotstuff.at 4 tomshotstuff.at shop.tomshotstuff.at" />
+    <option name="PROGRAM_PARAMETERS" value="https://www.tomshotstuff.at 4 https://tomshotstuff.at,https://shop.tomshotstuff.at" />
     <method v="2">
       <option name="Make" enabled="true" />
     </method>
