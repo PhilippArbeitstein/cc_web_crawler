@@ -7,7 +7,7 @@ import java.util.Optional;
     - Philipp Arbeitstein [12205666]
     - Philipp Kaiser [12203588]
  */
-public class MarkdownUtil2 {
+public class Markdown {
 
     public static String createHeading(String text, int level, int depth) {
         return "#".repeat(level) + " \t" + "-".repeat(depth) + "> \t" + text;

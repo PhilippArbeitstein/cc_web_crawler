@@ -8,7 +8,7 @@ import java.io.IOException;
     - Philipp Arbeitstein [12205666]
     - Philipp Kaiser [12203588]
  */
-public class ReportFileUtil {
+public class ReportFile {
 
     public static void appendToReport(String path, String content) {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(path, true))) {

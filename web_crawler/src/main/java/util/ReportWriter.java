@@ -15,7 +15,7 @@ public class ReportWriter {
 
     public ReportWriter(String reportPath) {
         this.reportPath = reportPath;
-        ReportFileUtil.clearFile(reportPath);
+        ReportFile.clearFile(reportPath);
     }
 
     public void writeReport(List<CrawlResult> pages, URL rootUrl) {
@@ -25,8 +25,8 @@ public class ReportWriter {
     }
 
     private void writeReportHeader(URL rootUrl) {
-        writeLine(MarkdownUtil2.createHeading("Crawled Website Report", 1, 0));
-        writeLine(MarkdownUtil2.createHeading("Results for: " + rootUrl, 2, 0));
+        writeLine(Markdown.createHeading("Crawled Website Report", 1, 0));
+        writeLine(Markdown.createHeading("Results for: " + rootUrl, 2, 0));
     }
 
     private List<CrawlResult> sortPagesByDepth(List<CrawlResult> pages) {
@@ -43,7 +43,7 @@ public class ReportWriter {
     }
 
     private void writePageLinkInfo(CrawlResult page) {
-        writeLine(MarkdownUtil2.createLinkInfo(page.pageUrl, page.currentDepth, page.isFetchFailed));
+        writeLine(Markdown.createLinkInfo(page.pageUrl, page.currentDepth, page.isFetchFailed));
         writeLine("<br>depth:" + page.currentDepth);
     }
 
@@ -59,12 +59,12 @@ public class ReportWriter {
     }
 
     private void writeParsedHeadingIfValid(String rawHeading, int depth) {
-        MarkdownUtil2.extractHeading(rawHeading, depth)
+        Markdown.extractHeading(rawHeading, depth)
                 .ifPresent(this::writeLine);
 
     }
 
     private void writeLine(String content) {
-        ReportFileUtil.appendToReport(reportPath, content);
+        ReportFile.appendToReport(reportPath, content);
     }
 }
