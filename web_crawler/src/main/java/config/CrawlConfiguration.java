@@ -4,7 +4,11 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Logger;
-
+/*
+    Participants:
+    - Philipp Arbeitstein [12205666]
+    - Philipp Kaiser [12203588]
+ */
 public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlableDomains) {
     private static final Logger logger = Logger.getLogger(CrawlConfiguration.class.getName());
 
