@@ -7,6 +7,9 @@ import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
 /*
     Participants:
     - Philipp Arbeitstein [12205666]
@@ -16,6 +19,10 @@ public class PageProcessor {
 
     private final PageLoader fetcher;
     private final int maxHeadingLevel = 6;
+
+    private final Predicate<String> isNotEmptyPredicate = text -> !text.isEmpty();
+    private final Function<Element, String> extractTextFunction = element -> element.text().trim();
+
 
     public PageProcessor(PageLoader fetcher) {
         this.fetcher = fetcher;
@@ -49,25 +56,14 @@ public class PageProcessor {
     }
 
     private List<String> extractHeadingsAtLevel(Document document, int level) {
+        Function<String, String> formatHeadingFunction = text -> "h" + level + ":" + text;
+
         return document.select("h" + level).stream()
-                .map(this::extractText)
-                .filter(this::isNotEmpty)
-                .map(text -> formatHeading(level, text))
+                .map(extractTextFunction)
+                .filter(isNotEmptyPredicate)
+                .map(formatHeadingFunction)
                 .toList();
     }
-
-    private String extractText(Element element) {
-        return element.text().trim();
-    }
-
-    private boolean isNotEmpty(String text) {
-        return !text.isEmpty();
-    }
-
-    private String formatHeading(int level, String text) {
-        return "h" + level + ":" + text;
-    }
-
 
     private List<String> extractValidLinks(Document document) {
         return document.select("a[href]").stream()
