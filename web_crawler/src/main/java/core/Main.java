@@ -6,6 +6,8 @@ import fetch.JsoupPageLoader;
 import util.ReportWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.Optional;
 /*
@@ -27,30 +29,30 @@ public class Main {
         Optional<CrawlConfiguration> config = createCrawlConfiguration(args);
         if (config.isEmpty()) return;
 
-        List<CrawlResult> results = runCrawl(config.get());
-        writeReport(results, config.get());
+        List<CrawlResult> crawlResults = runCrawl(config.get());
+        writeReport(crawlResults, config.get());
     }
 
     protected static Optional<CrawlConfiguration> createCrawlConfiguration(String[] args) {
-        Optional<URL> rootUrl = parseStartUrl(args[0]);
+        Optional<URL> rootUrl = extractRootUrl(args[0]);
         if (rootUrl.isEmpty()) return Optional.empty();
 
-        int maxDepth = parseDepth(args[1]);
+        int maxDepth = extractDepth(args[1]);
         if (maxDepth < MIN_DEPTH) return Optional.empty();
 
-        Set<String> allowedDomains = parseAllowedDomains(args[2]);
+        Set<String> allowedDomains = extractAllowedDomains(args[2]);
         if (allowedDomains.isEmpty()) return Optional.empty();
 
         return Optional.of(createConfiguration(rootUrl.get(), maxDepth, allowedDomains));
     }
 
-    private static Optional<URL> parseStartUrl(String urlArg) {
-        if (urlArg == null || urlArg.isBlank()) {
+    private static Optional<URL> extractRootUrl(String rootUrlFromArguments) {
+        if (rootUrlFromArguments == null || rootUrlFromArguments.isBlank()) {
             System.out.println("No start URL provided. Please provide at least one.");
             return Optional.empty();
         }
 
-        String cleanedUrl = urlArg.trim().toLowerCase();
+        String cleanedUrl = rootUrlFromArguments.trim().toLowerCase();
         if (cleanedUrl.isEmpty()) {
             System.out.println("Provided start URL is empty.");
             return Optional.empty();
@@ -64,27 +66,27 @@ public class Main {
         }
     }
 
-    private static int parseDepth(String depthStr) {
+    private static int extractDepth(String depthFromArguments) {
         try {
-            int depth = Integer.parseInt(depthStr);
+            int depth = Integer.parseInt(depthFromArguments);
             if (depth < MIN_DEPTH) {
                 System.out.println("Depth must be >= " + MIN_DEPTH + ".");
                 return -1;
             }
             return depth;
         } catch (NumberFormatException e) {
-            System.out.println("Invalid depth: " + depthStr);
+            System.out.println("Invalid depth: " + depthFromArguments);
             return -1;
         }
     }
 
-    private static Set<String> parseAllowedDomains(String domainArg) {
-        if (domainArg == null || domainArg.isBlank()) {
+    private static Set<String> extractAllowedDomains(String domainFromArguments) {
+        if (domainFromArguments == null || domainFromArguments.isBlank()) {
             System.out.println("No domains provided.");
             return Collections.emptySet();
         }
 
-        String[] domainArray = domainArg.split(",");
+        String[] domainArray = domainFromArguments.split(",");
         Set<String> domains = new HashSet<>();
         for (String domain : domainArray) {
             String cleaned = domain.trim().toLowerCase();
@@ -102,17 +104,23 @@ public class Main {
 
     private static CrawlConfiguration createConfiguration(URL rootUrl, int maxDepth, Set<String> allowedDomains) {
         try {
-            CrawlConfiguration config = new CrawlConfiguration(rootUrl, maxDepth, allowedDomains);
-            System.out.println("Configuration loaded: " + config);
-            return config;
+            return new CrawlConfiguration(rootUrl, maxDepth, allowedDomains);
         } catch (IllegalArgumentException e) {
-            System.out.println("Invalid configuration: " + e.getMessage());
+            System.err.println("Error creating CrawlConfiguration:");
+            System.err.println("  Root URL       : " + rootUrl);
+            System.err.println("  Max Depth      : " + maxDepth);
+            System.err.println("  Allowed Domains: " + allowedDomains);
+            System.err.println("  Reason         : " + e.getMessage());
             throw e;
         }
     }
 
     protected static List<CrawlResult> runCrawl(CrawlConfiguration config) {
-        System.out.println("Starting crawl from: " + config.rootUrl());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        String timestamp = LocalDateTime.now().format(formatter);
+
+        System.out.println("[" + timestamp + "] Starting crawl");
+        System.out.println(config.toString());
 
         WebCrawler crawler = new WebCrawler(config, new PageProcessor(new JsoupPageLoader()));
         return crawler.crawl();

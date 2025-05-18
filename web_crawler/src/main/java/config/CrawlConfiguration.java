@@ -59,4 +59,12 @@ public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlabl
             return Optional.empty();
         }
     }
+
+    @Override
+    public String toString() {
+        return String.format(
+                "Root URL       : %s%nMax Depth      : %d%nAllowed Domains: %s",
+                rootUrl, maxDepth, String.join(", ", crawlableDomains)
+        );
+    }
 }
