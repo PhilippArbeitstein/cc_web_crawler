@@ -122,7 +122,7 @@ public class Main {
         System.out.println("[" + timestamp + "] Starting crawl");
         System.out.println(config.toString());
 
-        WebCrawler crawler = new WebCrawler(config, new PageProcessor(new JsoupPageLoader()));
+        WebCrawler crawler = new WebCrawler(config, new CrawlPageAnalyzer(new JsoupPageLoader()));
         return crawler.crawl();
     }
 
