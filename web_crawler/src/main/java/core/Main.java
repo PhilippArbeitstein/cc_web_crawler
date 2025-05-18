@@ -20,6 +20,8 @@ public class Main {
     private static final int MIN_DEPTH = 0;
     private static final String REPORT_FILENAME = "report.md";
 
+    private static final int THREAD_POOL_SIZE = 20;
+
     public static void main(String[] args) {
         if (args.length < MIN_REQUIRED_ARGS) {
             System.out.println("Correct Usage: <StartURL> <depth> <domain1,domain2,...>");
@@ -122,7 +124,7 @@ public class Main {
         System.out.println("[" + timestamp + "] Starting crawl");
         System.out.println(config.toString());
 
-        WebCrawler crawler = new WebCrawler(config, new CrawlPageAnalyzer(new JsoupPageLoader()));
+        WebCrawler crawler = new WebCrawler(config, new CrawlPageAnalyzer(new JsoupPageLoader()), THREAD_POOL_SIZE);
         return crawler.crawl();
     }
 
