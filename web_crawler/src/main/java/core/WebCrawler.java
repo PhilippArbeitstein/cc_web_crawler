@@ -44,7 +44,15 @@ public class WebCrawler {
     }
 
     private void submitCrawlTask(String url, int depth, URL rootStartUrl) {
+        incrementTaskCount();
+        submitToExecutor(url, depth, rootStartUrl);
+    }
+
+    private void incrementTaskCount() {
         submittedTaskCount.incrementAndGet();
+    }
+
+    private void submitToExecutor(String url, int depth, URL rootStartUrl) {
         completionService.submit(() -> {
             crawlRecursively(url, depth, rootStartUrl);
             return null;

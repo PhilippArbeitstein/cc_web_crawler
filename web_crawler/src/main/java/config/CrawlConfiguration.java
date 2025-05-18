@@ -41,10 +41,7 @@ public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlabl
     private Set<String> extractValidDomains(Set<String> normalizedDomains) throws IllegalArgumentException {
         Set<String> validDomains = new HashSet<>();
         for (String domain : normalizedDomains) {
-            String host = extractHostFromDomain(domain);
-            if (host != null) {
-                validDomains.add(host);
-            }
+            extractHostFromDomain(domain).ifPresent(validDomains::add);
         }
 
         if (validDomains.isEmpty()) {
@@ -53,13 +50,13 @@ public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlabl
         return validDomains;
     }
 
-    private String extractHostFromDomain(String domain) {
+    private Optional<String> extractHostFromDomain(String domain) {
         try {
             URL url = new URL(domain);
-            return url.getHost();
+            return Optional.of(url.getHost());
         } catch (MalformedURLException e) {
             logger.warning("Malformed Domain-URL encountered: " + domain + " - " + e.getMessage());
-            return null;
+            return Optional.empty();
         }
     }
 }

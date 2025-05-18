@@ -48,17 +48,20 @@ public class ReportWriter {
     }
 
     private void writePageHeadings(CrawlResult page) {
-        if (page.headings == null) return;
+        if (hasNoHeadings(page)) return;
         for (String heading : page.headings) {
             writeParsedHeadingIfValid(heading, page.currentDepth);
         }
     }
 
+    private boolean hasNoHeadings(CrawlResult page) {
+        return page.headings == null || page.headings.isEmpty();
+    }
+
     private void writeParsedHeadingIfValid(String rawHeading, int depth) {
-        String parsed = MarkdownUtil2.extractHeading(rawHeading, depth);
-        if (parsed != null) {
-            writeLine(parsed);
-        }
+        MarkdownUtil2.extractHeading(rawHeading, depth)
+                .ifPresent(this::writeLine);
+
     }
 
     private void writeLine(String content) {
