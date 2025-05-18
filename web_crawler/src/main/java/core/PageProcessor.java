@@ -4,7 +4,7 @@ import fetch.PageLoader;
 import model.CrawlResult;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
+
 import java.util.ArrayList;
 import java.util.List;
 /*
@@ -15,7 +15,7 @@ import java.util.List;
 public class PageProcessor {
 
     private final PageLoader fetcher;
-    private final int htmlNumberOfHeadings = 6;
+    private final int maxHeadingLevel = 6;
 
     public PageProcessor(PageLoader fetcher) {
         this.fetcher = fetcher;
@@ -31,8 +31,8 @@ public class PageProcessor {
 
         try {
             Document document = fetcher.loadPage(url);
-            page.headings = extractHeadings(document);
-            page.childLinks = extractLinks(document);
+            page.headings = extractFormattedHeadings(document);
+            page.childLinks = extractValidLinks(document);
         } catch (Exception e) {
             page.isFetchFailed = true;
         }
@@ -40,29 +40,40 @@ public class PageProcessor {
         return page;
     }
 
-    private List<String> extractHeadings(Document document) {
+    private List<String> extractFormattedHeadings(Document document) {
         List<String> headings = new ArrayList<>();
-        for (int i = 1; i <= htmlNumberOfHeadings; i++) {
-            Elements headerElements = document.select("h" + i);
-            for (Element header : headerElements) {
-                String text = header.text().trim();
-                if (!text.isEmpty()) {
-                    headings.add("h" + i + ":" + text);
-                }
-            }
+        for (int level = 1; level <= maxHeadingLevel; level++) {
+            headings.addAll(extractHeadingsAtLevel(document, level));
         }
         return headings;
     }
 
-    private List<String> extractLinks(Document document) {
-        List<String> links = new ArrayList<>();
-        Elements anchors = document.select("a[href]");
-        for (Element anchor : anchors) {
-            String href = anchor.attr("abs:href").trim().toLowerCase();
-            if (!href.isEmpty()) {
-                links.add(href);
-            }
-        }
-        return links;
+    private List<String> extractHeadingsAtLevel(Document document, int level) {
+        return document.select("h" + level).stream()
+                .map(this::extractText)
+                .filter(this::isNotEmpty)
+                .map(text -> formatHeading(level, text))
+                .toList();
     }
+
+    private String extractText(Element element) {
+        return element.text().trim();
+    }
+
+    private boolean isNotEmpty(String text) {
+        return !text.isEmpty();
+    }
+
+    private String formatHeading(int level, String text) {
+        return "h" + level + ":" + text;
+    }
+
+
+    private List<String> extractValidLinks(Document document) {
+        return document.select("a[href]").stream()
+                .map(anchor -> anchor.attr("abs:href").trim().toLowerCase())
+                .filter(href -> !href.isEmpty())
+                .toList();
+    }
+
 }
