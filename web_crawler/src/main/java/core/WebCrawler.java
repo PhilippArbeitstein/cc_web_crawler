@@ -8,7 +8,11 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
-
+/*
+    Participants:
+    - Philipp Arbeitstein [12205666]
+    - Philipp Kaiser [12203588]
+ */
 public class WebCrawler {
 
     private final CrawlConfiguration config;
@@ -33,17 +37,9 @@ public class WebCrawler {
         submitCrawlTask(config.rootUrl().toString(), 0, config.rootUrl());
 
         for (int i = 0; i < submittedTaskCount.get(); i++) {
-            try {
-                completionService.take().get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                System.err.println("Crawling interrupted.");
-            } catch (ExecutionException e) {
-                System.err.println("Crawling task failed: " + e.getCause());
-            }
+            waitForAllTasksToFinish();
         }
-
-        executor.shutdown();
+        shutdownExecutor();
         return resultsList;
     }
 
@@ -55,45 +51,43 @@ public class WebCrawler {
         });
     }
 
+    private void waitForAllTasksToFinish() {
+        try {
+            completionService.take().get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logError("Crawling interrupted.", e);
+            System.err.println("Crawling interrupted.");
+        } catch (ExecutionException e) {
+            logError("Crawling failed.", e);
+            System.err.println("Crawling task failed: " + e.getCause());
+        }
+    }
+
+    private void shutdownExecutor() {
+        executor.shutdown();
+    }
+
+    private void logError(String message, Exception e) {
+        System.err.println(message);
+    }
+
     private void crawlRecursively(String url, int currentDepth, URL rootStartUrl) {
         String normalized = WebCrawlerUtils.normalizeUrl(url);
 
         if (!shouldCrawl(url, currentDepth)) return;
+        if (handleAlreadyVisited(normalized, rootStartUrl)) return;
 
-        if (visitedPages.contains(normalized)) {
-            addStartUrlToExistingPage(normalized, rootStartUrl);
-            return;
-        }
-        visitedPages.add(normalized);
+        markPageAsVisited(normalized);
+        logCrawlingProgress(url, currentDepth);
 
-        System.out.printf("Crawling at %s (depth %d)\n", url, currentDepth);
+        CrawlResult result = processAndStorePage(url, currentDepth, rootStartUrl);
 
-        CrawlResult page = pageProcessor.processPage(url, currentDepth);
-        page.parentUrls.add(rootStartUrl);
-        resultsList.add(page);
+        if (shouldSkipChildLinks(result)) return;
 
-        if (page.isFetchFailed || page.childLinks == null) return;
+        submitChildLinks(result.childLinks, currentDepth + 1, rootStartUrl);
 
-        for (String link : page.childLinks) {
-            String normalizedLink = WebCrawlerUtils.normalizeUrl(link);
-            if (!normalizedLink.isEmpty()) {
-                submitCrawlTask(link, currentDepth + 1, rootStartUrl);
-            }
-        }
     }
-
-    private void addStartUrlToExistingPage(String normalizedUrl, URL rootStartUrl) {
-        synchronized (resultsList) {
-            for (CrawlResult page : resultsList) {
-                if (normalizedUrl.equals(WebCrawlerUtils.normalizeUrl(page.pageUrl))) {
-                    page.parentUrls.add(rootStartUrl);
-                    break;
-                }
-            }
-        }
-    }
-
-
     protected boolean shouldCrawl(String url, int currentDepth) {
         if (currentDepth > config.maxDepth()) return false;
         if (url.isEmpty()) return false;
@@ -102,6 +96,46 @@ public class WebCrawler {
         if (!WebCrawlerUtils.isDomainAllowed(normalized, config.crawlableDomains())) return false;
 
         return true;
+    }
+    private boolean handleAlreadyVisited(String normalizedUrl, URL rootUrl) {
+        if (!visitedPages.contains(normalizedUrl)) return false;
+        addStartUrlToExistingPage(normalizedUrl, rootUrl);
+        return true;
+    }
+    private void addStartUrlToExistingPage(String normalizedUrl, URL rootStartUrl) {
+        synchronized (resultsList) {
+            for (CrawlResult result : resultsList) {
+                if (normalizedUrl.equals(WebCrawlerUtils.normalizeUrl(result.pageUrl))) {
+                    result.parentUrls.add(rootStartUrl);
+                    break;
+                }
+            }
+        }
+    }
+    private void markPageAsVisited(String normalizedUrl) {
+        visitedPages.add(normalizedUrl);
+    }
+    private void logCrawlingProgress(String url, int depth) {
+        System.out.printf("Crawling at %s (depth %d)\n", url, depth);
+    }
+
+    private CrawlResult processAndStorePage(String url, int depth, URL parentUrl) {
+        CrawlResult result = pageProcessor.processPage(url, depth);
+        result.parentUrls.add(parentUrl);
+        resultsList.add(result);
+        return result;
+    }
+    private boolean shouldSkipChildLinks(CrawlResult result) {
+        return result.isFetchFailed || result.childLinks == null;
+    }
+
+    private void submitChildLinks(List<String> links, int nextDepth, URL rootUrl) {
+        for (String link : links) {
+            String normalizedLink = WebCrawlerUtils.normalizeUrl(link);
+            if (!normalizedLink.isEmpty()) {
+                submitCrawlTask(link, nextDepth, rootUrl);
+            }
+        }
     }
 }
 

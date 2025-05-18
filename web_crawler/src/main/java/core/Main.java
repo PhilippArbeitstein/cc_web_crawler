@@ -3,15 +3,16 @@ package core;
 import config.CrawlConfiguration;
 import model.CrawlResult;
 import fetch.JsoupPageLoader;
-import util.MarkdownWriter;
-
-import java.io.IOException;
+import util.ReportWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-
 import java.util.Optional;
-
+/*
+    Participants:
+    - Philipp Arbeitstein [12205666]
+    - Philipp Kaiser [12203588]
+ */
 public class Main {
     private static final int MIN_REQUIRED_ARGS = 3;
     private static final int MIN_DEPTH = 0;
@@ -118,12 +119,8 @@ public class Main {
     }
 
     protected static void writeReport(List<CrawlResult> results, CrawlConfiguration config) {
-        MarkdownWriter writer = new MarkdownWriter();
-        try {
-            writer.write(results, REPORT_FILENAME, config.rootUrl());
-            System.out.println("Report written to " + REPORT_FILENAME);
-        } catch (IOException e) {
-            System.out.println("Error writing report: " + e.getMessage());
-        }
+        ReportWriter writer = new ReportWriter(REPORT_FILENAME);
+        writer.writeReport(results, config.rootUrl());
+        System.out.println("Report written to " + REPORT_FILENAME);
     }
 }

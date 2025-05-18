@@ -5,10 +5,13 @@ import model.CrawlResult;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 import java.util.ArrayList;
 import java.util.List;
-
+/*
+    Participants:
+    - Philipp Arbeitstein [12205666]
+    - Philipp Kaiser [12203588]
+ */
 public class PageProcessor {
 
     private final PageLoader fetcher;
@@ -44,7 +47,7 @@ public class PageProcessor {
             for (Element header : headerElements) {
                 String text = header.text().trim();
                 if (!text.isEmpty()) {
-                    headings.add(text);
+                    headings.add("h" + i + ":" + text);
                 }
             }
         }
