@@ -1,9 +1,12 @@
 package config;
 
+import exceptions.ConfigurationException;
+
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 import java.util.logging.Logger;
+
 /*
     Participants:
     - Philipp Arbeitstein [12205666]
@@ -13,6 +16,15 @@ public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlabl
     private static final Logger logger = Logger.getLogger(CrawlConfiguration.class.getName());
 
     public CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlableDomains) {
+        if (rootUrl == null) {
+            throw new ConfigurationException("Root URL cannot be null.");
+        }
+        if (maxDepth < 1) {
+            throw new ConfigurationException("Max depth must be greater than zero.");
+        }
+        if (crawlableDomains == null || crawlableDomains.isEmpty()) {
+            throw new ConfigurationException("At least one crawlable domain must be provided.");
+        }
         this.rootUrl = rootUrl;
         this.maxDepth = maxDepth;
         this.crawlableDomains = processDomains(crawlableDomains);
@@ -45,7 +57,7 @@ public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlabl
         }
 
         if (validDomains.isEmpty()) {
-            throw new IllegalArgumentException("At least one valid domain must be provided.");
+            throw new ConfigurationException("At least one valid domain must be provided.");
         }
         return validDomains;
     }

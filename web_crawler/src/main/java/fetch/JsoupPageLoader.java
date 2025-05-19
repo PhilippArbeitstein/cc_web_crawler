@@ -8,7 +8,7 @@ import java.io.IOException;
 
 public class JsoupPageLoader implements PageLoader {
     @Override
-    public JsoupHtmlDocument loadPage(String url) throws PageLoadException {
+    public HtmlDocument loadPage(String url) throws PageLoadException {
         try {
             Document doc = Jsoup.connect(url)
                     .userAgent("Mozilla/5.0")

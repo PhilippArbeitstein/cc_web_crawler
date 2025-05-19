@@ -14,16 +14,6 @@ public class JsoupHtmlDocument implements HtmlDocument {
     }
 
     @Override
-    public String getTitle() {
-        return document.title();
-    }
-
-    @Override
-    public String getText() {
-        return document.body().text();
-    }
-
-    @Override
     public List<String> getLinks() {
         Elements links = document.select("a[href]");
         return links.stream()
