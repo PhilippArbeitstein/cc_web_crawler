@@ -3,6 +3,8 @@ package core;
 import config.CrawlConfiguration;
 import model.CrawlResult;
 import fetch.JsoupPageLoader;
+import org.slf4j.Logger;
+import util.CrawlLogger;
 import util.ReportWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -16,6 +18,7 @@ import java.util.Optional;
     - Philipp Kaiser [12203588]
  */
 public class Main {
+    private static final Logger logger = CrawlLogger.getLogger(Main.class);
     private static final int MIN_REQUIRED_ARGS = 3;
     private static final int MIN_DEPTH = 0;
     private static final String REPORT_FILENAME = "report.md";
@@ -23,7 +26,7 @@ public class Main {
 
     public static void main(String[] args) {
         if (args.length < MIN_REQUIRED_ARGS) {
-            System.out.println("Correct Usage: <StartURL> <depth> <domain1,domain2,...>");
+            logger.info("Correct Usage: <StartURL> <depth> <domain1,domain2,...>");
             return;
         }
 
@@ -38,8 +41,10 @@ public class Main {
         Optional<URL> rootUrl = extractRootUrl(args[0]);
         if (rootUrl.isEmpty()) return Optional.empty();
 
-        int maxDepth = extractDepth(args[1]);
-        if (maxDepth < MIN_DEPTH) return Optional.empty();
+        Optional<Integer> maxDepth = extractDepth(args[1]);
+        System.out.println("1) " + maxDepth.get());
+        if (maxDepth.isEmpty()) return Optional.empty();
+        System.out.println("2) " + maxDepth.get());
 
         Set<String> allowedDomains = extractAllowedDomains(args[2]);
         if (allowedDomains.isEmpty()) return Optional.empty();
@@ -49,41 +54,41 @@ public class Main {
 
     private static Optional<URL> extractRootUrl(String rootUrlFromArguments) {
         if (rootUrlFromArguments == null || rootUrlFromArguments.isBlank()) {
-            System.out.println("No start URL provided. Please provide at least one.");
+            logger.error("No start URL provided. Please provide at least one.");
             return Optional.empty();
         }
 
         String cleanedUrl = rootUrlFromArguments.trim().toLowerCase();
         if (cleanedUrl.isEmpty()) {
-            System.out.println("Provided start URL is empty.");
+            logger.error("Provided start URL is empty.");
             return Optional.empty();
         }
 
         try {
             return Optional.of(new URL(cleanedUrl));
         } catch (MalformedURLException e) {
-            System.out.printf("Invalid root URL: %s%n", cleanedUrl);
+            logger.error("Invalid root URL: %s%n", cleanedUrl);
             return Optional.empty();
         }
     }
 
-    private static int extractDepth(String depthFromArguments) {
+    private static Optional<Integer> extractDepth(String depthFromArguments) {
         try {
             int depth = Integer.parseInt(depthFromArguments);
             if (depth < MIN_DEPTH) {
-                System.out.println("Depth must be >= " + MIN_DEPTH + ".");
-                return -1;
+                logger.error("Depth must be >= {}.", MIN_DEPTH);
+                return Optional.empty();
             }
-            return depth;
+            return Optional.of(depth);
         } catch (NumberFormatException e) {
-            System.out.println("Invalid depth: " + depthFromArguments);
-            return -1;
+            logger.error("Invalid depth: {}", depthFromArguments, e);
+            return Optional.empty();
         }
     }
 
     private static Set<String> extractAllowedDomains(String domainFromArguments) {
         if (domainFromArguments == null || domainFromArguments.isBlank()) {
-            System.out.println("No domains provided.");
+            logger.error("No domains provided.");
             return Collections.emptySet();
         }
 
@@ -97,13 +102,14 @@ public class Main {
         }
 
         if (domains.isEmpty()) {
-            System.out.println("Please provide at least one valid domain.");
+            logger.error("Please provide at least one valid domain.");
         }
 
         return domains;
     }
 
-    private static CrawlConfiguration createConfiguration(URL rootUrl, int maxDepth, Set<String> allowedDomains) {
+    private static CrawlConfiguration createConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<String> allowedDomains) {
+        System.out.println("3) "+maxDepth.get());
         try {
             return new CrawlConfiguration(rootUrl, maxDepth, allowedDomains);
         } catch (IllegalArgumentException e) {

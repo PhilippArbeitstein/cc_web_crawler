@@ -7,6 +7,7 @@ import util.WebCrawlerUtils;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /*
     Participants:
@@ -83,12 +84,18 @@ public class WebCrawler {
     }
 
     protected boolean isValidUrlForCrawl(String url, int currentDepth) {
-        if (currentDepth > config.maxDepth()) return false;
         if (url.isEmpty()) return false;
 
         Optional<String> normalizedOpt = WebCrawlerUtils.normalizeUrl(url);
+
+        Predicate<String> depthCheck = normalized ->
+                config.maxDepth()
+                        .map(max -> currentDepth <= max)
+                        .orElse(true);
+
         return normalizedOpt
                 .filter(normalized -> WebCrawlerUtils.isDomainAllowed(normalized, config.crawlableDomains()))
+                .filter(depthCheck)
                 .isPresent();
     }
 
