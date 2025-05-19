@@ -2,11 +2,14 @@ package core;
 
 import config.CrawlConfiguration;
 import model.CrawlResult;
+import org.slf4j.Logger;
+import util.CrawlLogger;
 import util.WebCrawlerUtils;
 
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /*
     Participants:
@@ -14,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
     - Philipp Kaiser [12203588]
  */
 public class WebCrawler {
+    private static final Logger logger = CrawlLogger.getLogger(WebCrawler.class);
     private final CrawlConfiguration config;
     private final Set<String> visitedPages;
     private final List<CrawlResult> resultsList;
@@ -83,12 +87,18 @@ public class WebCrawler {
     }
 
     protected boolean isValidUrlForCrawl(String url, int currentDepth) {
-        if (currentDepth > config.maxDepth()) return false;
         if (url.isEmpty()) return false;
 
         Optional<String> normalizedOpt = WebCrawlerUtils.normalizeUrl(url);
+
+        Predicate<String> depthCheck = normalized ->
+                config.maxDepth()
+                        .map(max -> currentDepth <= max)
+                        .orElse(true);
+
         return normalizedOpt
                 .filter(normalized -> WebCrawlerUtils.isDomainAllowed(normalized, config.crawlableDomains()))
+                .filter(depthCheck)
                 .isPresent();
     }
 
@@ -116,7 +126,7 @@ public class WebCrawler {
     }
 
     private void logCrawlingProgress(String url, int depth) {
-        System.out.printf("Crawling at %s (depth %d)\n", url, depth);
+        logger.info("Crawling at %s (depth %d)\n", url, depth);
     }
 
     private CrawlResult processAndStorePage(String url, int depth, URL parentUrl) {

@@ -4,6 +4,8 @@ import exceptions.PageLoadException;
 import fetch.HtmlDocument;
 import fetch.PageLoader;
 import model.CrawlResult;
+import org.slf4j.Logger;
+import util.CrawlLogger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,10 +17,10 @@ import java.util.function.Predicate;
     - Philipp Kaiser [12203588]
  */
 public class CrawlPageAnalyzer {
+    private static final Logger logger = CrawlLogger.getLogger(CrawlPageAnalyzer.class);
     private final PageLoader fetcher;
     private final int MAX_HEADING_LEVEL = 6;
     private final Predicate<String> isNotEmpty = text -> !text.isEmpty();
-
     public CrawlPageAnalyzer(PageLoader fetcher) {
         this.fetcher = fetcher;
     }
@@ -36,7 +38,7 @@ public class CrawlPageAnalyzer {
             page.headings = extractFormattedHeadings(document);
             page.childLinks = extractValidLinks(document);
         } catch (PageLoadException e) {
-            System.err.println("Failed to load or process page: " + url + " - " + e.getMessage());
+            logger.error("Failed to load or process page: " + url + " - " + e.getMessage());
             page.isFetchFailed = true;
         }
 

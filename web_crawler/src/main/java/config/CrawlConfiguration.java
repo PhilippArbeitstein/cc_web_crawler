@@ -1,25 +1,26 @@
 package config;
 
 import exceptions.ConfigurationException;
+import org.slf4j.Logger;
+import util.CrawlLogger;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.logging.Logger;
 
 /*
     Participants:
     - Philipp Arbeitstein [12205666]
     - Philipp Kaiser [12203588]
  */
-public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlableDomains) {
-    private static final Logger logger = Logger.getLogger(CrawlConfiguration.class.getName());
+public record CrawlConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<String> crawlableDomains) {
+    private static final Logger logger = CrawlLogger.getLogger(CrawlConfiguration.class);
 
-    public CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlableDomains) {
+    public CrawlConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<String> crawlableDomains) {
         if (rootUrl == null) {
             throw new ConfigurationException("Root URL cannot be null.");
         }
-        if (maxDepth < 1) {
+        if (maxDepth.isEmpty()) {
             throw new ConfigurationException("Max depth must be greater than zero.");
         }
         if (crawlableDomains == null || crawlableDomains.isEmpty()) {
@@ -67,7 +68,7 @@ public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlabl
             URL url = new URL(domain);
             return Optional.of(url.getHost());
         } catch (MalformedURLException e) {
-            logger.warning("Malformed Domain-URL encountered: " + domain + " - " + e.getMessage());
+            logger.error("Malformed Domain-URL encountered: " + domain + " - " + e.getMessage());
             return Optional.empty();
         }
     }
@@ -76,7 +77,7 @@ public record CrawlConfiguration(URL rootUrl, int maxDepth, Set<String> crawlabl
     public String toString() {
         return String.format(
                 "Root URL       : %s%nMax Depth      : %d%nAllowed Domains: %s",
-                rootUrl, maxDepth, String.join(", ", crawlableDomains)
+                rootUrl, maxDepth.get(), String.join(", ", crawlableDomains)
         );
     }
 }

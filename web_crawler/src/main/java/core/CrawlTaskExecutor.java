@@ -1,5 +1,8 @@
 package core;
 
+import org.slf4j.Logger;
+import util.CrawlLogger;
+
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -10,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 
 public class CrawlTaskExecutor {
+    private static final Logger logger = CrawlLogger.getLogger(CrawlTaskExecutor.class);
     private final ExecutorService executor;
     private final CompletionService<Void> completionService;
     private final AtomicInteger taskCount = new AtomicInteger(0);
@@ -31,19 +35,10 @@ public class CrawlTaskExecutor {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logError("Crawling interrupted.", e);
-            System.err.println("Crawling interrupted.");
+            logger.error("Crawling interrupted.", e);
             throw new RuntimeException("Crawling interrupted.", e);
         } catch (ExecutionException e) {
-            logError("Crawling failed.", e);
-            System.err.println("Crawling task failed: " + e.getCause());
-        }
-    }
-
-    private void logError(String message, Exception e) {
-        System.err.println(message);
-        if (e != null) {
-            e.printStackTrace(System.err);
+            logger.error("Crawling failed.", e);
         }
     }
 
@@ -53,7 +48,7 @@ public class CrawlTaskExecutor {
             if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
                 executor.shutdownNow();
                 if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                    System.err.println("Executor did not terminate in time.");
+                    logger.warn("Executor did not terminate in time.");
                 }
             }
         } catch (InterruptedException e) {

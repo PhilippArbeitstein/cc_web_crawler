@@ -1,7 +1,9 @@
 package util;
 
+import core.Main;
 import exceptions.ReportFileException;
 import model.CrawlResult;
+import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.net.URL;
@@ -14,6 +16,7 @@ import java.util.List;
     - Philipp Kaiser [12203588]
  */
 public class ReportWriter {
+    private static final Logger logger = CrawlLogger.getLogger(ReportWriter.class);
     private final String reportPath;
 
     public ReportWriter(String reportPath) {
@@ -21,7 +24,7 @@ public class ReportWriter {
         try {
             ReportFile.clearFile(reportPath);
         } catch (ReportFileException e) {
-            System.err.println("Failed to clear report file: " + reportPath);
+            logger.error("Failed to clear report file: " + reportPath);
             e.printStackTrace();
         }    }
 
@@ -75,7 +78,7 @@ public class ReportWriter {
         try {
             ReportFile.appendToReport(reportPath, content);
         } catch (ReportFileException e) {
-            System.err.println("Failed to append to report file: " + reportPath);
+            logger.error("Failed to append to report file: " + reportPath);
             e.printStackTrace();
         }
     }
