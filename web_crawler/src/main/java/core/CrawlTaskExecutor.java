@@ -33,6 +33,7 @@ public class CrawlTaskExecutor {
             Thread.currentThread().interrupt();
             logError("Crawling interrupted.", e);
             System.err.println("Crawling interrupted.");
+            throw new RuntimeException("Crawling interrupted.", e);
         } catch (ExecutionException e) {
             logError("Crawling failed.", e);
             System.err.println("Crawling task failed: " + e.getCause());
