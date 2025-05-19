@@ -22,6 +22,8 @@ class WebCrawlerTest {
     private CrawlPageAnalyzer analyzer;
     private CrawlConfiguration config;
     private URL rootUrl;
+    private final CrawlResult mockedResult = new CrawlResult();
+
 
     @BeforeEach
     void setUp() throws Exception {
@@ -33,26 +35,33 @@ class WebCrawlerTest {
 
     @Test
     void crawlRecursivelyStoresResults() {
-        try (MockedStatic<WebCrawlerUtils> utils = mockStatic(WebCrawlerUtils.class)) {
-            utils.when(() -> WebCrawlerUtils.normalizeUrl(anyString()))
-                    .thenReturn(Optional.of("https://example.com"));
-
-            utils.when(() -> WebCrawlerUtils.isDomainAllowed(anyString(), anySet()))
-                    .thenReturn(true);
-
-            CrawlResult result = new CrawlResult();
-            result.pageUrl = "https://example.com";
-            result.childLinks = List.of();
-            result.isFetchFailed = false;
-
-            when(analyzer.processPage(eq("https://example.com"), anyInt()))
-                    .thenReturn(result);
+        try (MockedStatic<WebCrawlerUtils> utils = mockWebCrawlerUtils()) {
+            mockAnalyzerReturnsResult();
 
             crawler.crawlRecursively("https://example.com", 0, rootUrl);
 
-            assertEquals(1, result.parentUrls.size());
-            assertEquals("https://example.com", result.pageUrl);
+            assertEquals(1, mockedResult.parentUrls.size());
+            assertEquals("https://example.com", mockedResult.pageUrl);
         }
+    }
+
+    private MockedStatic<WebCrawlerUtils> mockWebCrawlerUtils() {
+        MockedStatic<WebCrawlerUtils> utils = mockStatic(WebCrawlerUtils.class);
+        utils.when(() -> WebCrawlerUtils.normalizeUrl(anyString()))
+                .thenReturn(Optional.of("https://example.com"));
+        utils.when(() -> WebCrawlerUtils.isDomainAllowed(anyString(), anySet()))
+                .thenReturn(true);
+        return utils;
+    }
+
+
+    private void mockAnalyzerReturnsResult() {
+        mockedResult.pageUrl = "https://example.com";
+        mockedResult.childLinks = List.of();
+        mockedResult.isFetchFailed = false;
+
+        when(analyzer.processPage(eq("https://example.com"), anyInt()))
+                .thenReturn(mockedResult);
     }
 
 

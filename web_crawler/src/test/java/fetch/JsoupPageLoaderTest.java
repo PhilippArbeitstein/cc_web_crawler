@@ -14,37 +14,41 @@ import static org.mockito.Mockito.*;
 
 class JsoupPageLoaderTest {
 
+    private final JsoupPageLoader loader = new JsoupPageLoader();
+
     @Test
     void loadPageReturnsHtmlDocument() throws Exception {
-        String url = "https://example.com";
-        Document mockDoc = mock(Document.class);
-        Connection mockConn = mock(Connection.class);
-
-        try (MockedStatic<Jsoup> jsoupMock = mockStatic(Jsoup.class)) {
-            jsoupMock.when(() -> Jsoup.connect(url)).thenReturn(mockConn);
-            when(mockConn.userAgent(anyString())).thenReturn(mockConn);
-            when(mockConn.get()).thenReturn(mockDoc);
-
-            JsoupPageLoader loader = new JsoupPageLoader();
-            HtmlDocument result = loader.loadPage(url);
-
+        try (MockedStatic<Jsoup> jsoupMock = mockJsoup("https://example.com", false)) {
+            HtmlDocument result = loader.loadPage("https://example.com");
             assertTrue(result instanceof JsoupHtmlDocument);
         }
     }
 
     @Test
     void loadPageThrowsPageLoadExceptionOnError() throws Exception {
-        String url = "https://fail.com";
-        Connection mockConn = mock(Connection.class);
-
-        try (MockedStatic<Jsoup> jsoupMock = mockStatic(Jsoup.class)) {
-            jsoupMock.when(() -> Jsoup.connect(url)).thenReturn(mockConn);
-            when(mockConn.userAgent(anyString())).thenReturn(mockConn);
-            when(mockConn.get()).thenThrow(new IOException("fail"));
-
-            JsoupPageLoader loader = new JsoupPageLoader();
-
-            assertThrows(PageLoadException.class, () -> loader.loadPage(url));
+        try (MockedStatic<Jsoup> jsoupMock = mockJsoup("https://fail.com", true)) {
+            assertThrows(PageLoadException.class, () -> loader.loadPage("https://fail.com"));
         }
     }
+
+    private MockedStatic<Jsoup> mockJsoup(String url, boolean throwIOException) throws IOException {
+        Connection mockConn = setupMockConnection(throwIOException);
+        MockedStatic<Jsoup> jsoupMock = mockStatic(Jsoup.class);
+        jsoupMock.when(() -> Jsoup.connect(url)).thenReturn(mockConn);
+        return jsoupMock;
+    }
+
+    private Connection setupMockConnection(boolean throwIOException) throws IOException {
+        Connection mockConn = mock(Connection.class);
+        when(mockConn.userAgent(anyString())).thenReturn(mockConn);
+
+        if (throwIOException) {
+            when(mockConn.get()).thenThrow(new IOException("fail"));
+        } else {
+            when(mockConn.get()).thenReturn(mock(Document.class));
+        }
+
+        return mockConn;
+    }
+
 }

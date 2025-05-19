@@ -75,26 +75,21 @@ class CrawlTaskExecutorTest {
     }
 
     @Test
-    void shutdownTriggersForcedTerminationIfNotCompleted() throws Exception {
-        CrawlTaskExecutor blockingExecutor = new CrawlTaskExecutor(1);
-        injectExecutor(blockingExecutor, new NeverTerminatingExecutor());
+    void shutdownTriggersForcedTerminationIfNotCompleted() {
+        ExecutorService neverTerminatingExecutor = new NeverTerminatingExecutor();
+        CrawlTaskExecutor executor = new CrawlTaskExecutor(neverTerminatingExecutor);
 
-        assertDoesNotThrow(blockingExecutor::shutdown);
+        assertDoesNotThrow(executor::shutdown);
     }
+
 
     @Test
-    void shutdownHandlesInterruptedExceptionDuringTermination() throws Exception {
-        CrawlTaskExecutor interruptingExecutor = new CrawlTaskExecutor(1);
-        injectExecutor(interruptingExecutor, new InterruptingExecutor());
+    void shutdownHandlesInterruptedExceptionDuringTermination() {
+        ExecutorService interruptingExecutor = new InterruptingExecutor();
+        CrawlTaskExecutor executor = new CrawlTaskExecutor(interruptingExecutor);
 
-        assertDoesNotThrow(interruptingExecutor::shutdown);
+        assertDoesNotThrow(executor::shutdown);
         assertTrue(Thread.interrupted());
-    }
-
-    private void injectExecutor(CrawlTaskExecutor instance, ExecutorService customExecutor) throws Exception {
-        Field executorField = CrawlTaskExecutor.class.getDeclaredField("executor");
-        executorField.setAccessible(true);
-        executorField.set(instance, customExecutor);
     }
 
     static class NeverTerminatingExecutor extends ThreadPoolExecutor {

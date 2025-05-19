@@ -39,8 +39,6 @@ class ReportWriterTest {
             assertTrue(content.contains("Results for: https://example.com"));
             assertTrue(content.contains("link to"));
             assertTrue(content.contains("depth:1"));
-
-
         }
     }
 
@@ -58,7 +56,6 @@ class ReportWriterTest {
             String content = reader.lines().reduce("", (a, b) -> a + b);
             assertTrue(content.contains("depth:2"));
             assertTrue(content.contains("#"));
-
         }
     }
 
