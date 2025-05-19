@@ -17,9 +17,6 @@ public record CrawlConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<St
     private static final Logger logger = CrawlLogger.getLogger(CrawlConfiguration.class);
 
     public CrawlConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<String> crawlableDomains) {
-        System.out.println("4) " + maxDepth.get());
-        System.out.println("5) " + maxDepth.isEmpty());
-
         if (rootUrl == null) {
             throw new ConfigurationException("Root URL cannot be null.");
         }

@@ -42,9 +42,7 @@ public class Main {
         if (rootUrl.isEmpty()) return Optional.empty();
 
         Optional<Integer> maxDepth = extractDepth(args[1]);
-        System.out.println("1) " + maxDepth.get());
         if (maxDepth.isEmpty()) return Optional.empty();
-        System.out.println("2) " + maxDepth.get());
 
         Set<String> allowedDomains = extractAllowedDomains(args[2]);
         if (allowedDomains.isEmpty()) return Optional.empty();
@@ -109,15 +107,14 @@ public class Main {
     }
 
     private static CrawlConfiguration createConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<String> allowedDomains) {
-        System.out.println("3) "+maxDepth.get());
         try {
             return new CrawlConfiguration(rootUrl, maxDepth, allowedDomains);
         } catch (IllegalArgumentException e) {
-            System.err.println("Error creating CrawlConfiguration:");
-            System.err.println("  Root URL       : " + rootUrl);
-            System.err.println("  Max Depth      : " + maxDepth);
-            System.err.println("  Allowed Domains: " + allowedDomains);
-            System.err.println("  Reason         : " + e.getMessage());
+            logger.error("Error creating CrawlConfiguration:");
+            logger.error("  Root URL       : " + rootUrl);
+            logger.error("  Max Depth      : " + maxDepth);
+            logger.error("  Allowed Domains: " + allowedDomains);
+            logger.error("  Reason         : " + e.getMessage());
             throw e;
         }
     }
@@ -126,8 +123,8 @@ public class Main {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String timestamp = LocalDateTime.now().format(formatter);
 
-        System.out.println("[" + timestamp + "] Starting crawl");
-        System.out.println(config.toString());
+        logger.info("[" + timestamp + "] Starting crawl");
+        logger.info(config.toString());
 
         WebCrawler crawler = new WebCrawler(config, new CrawlPageAnalyzer(new JsoupPageLoader()), THREAD_POOL_SIZE);
         return crawler.crawl();
@@ -136,6 +133,6 @@ public class Main {
     protected static void writeReport(List<CrawlResult> results, CrawlConfiguration config) {
         ReportWriter writer = new ReportWriter(REPORT_FILENAME);
         writer.writeReport(results, config.rootUrl());
-        System.out.println("Report written to " + REPORT_FILENAME);
+        logger.info("Report written to " + REPORT_FILENAME);
     }
 }

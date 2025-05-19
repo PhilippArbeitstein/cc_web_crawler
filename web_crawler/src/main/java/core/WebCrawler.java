@@ -2,6 +2,8 @@ package core;
 
 import config.CrawlConfiguration;
 import model.CrawlResult;
+import org.slf4j.Logger;
+import util.CrawlLogger;
 import util.WebCrawlerUtils;
 
 import java.net.URL;
@@ -15,6 +17,7 @@ import java.util.function.Predicate;
     - Philipp Kaiser [12203588]
  */
 public class WebCrawler {
+    private static final Logger logger = CrawlLogger.getLogger(WebCrawler.class);
     private final CrawlConfiguration config;
     private final Set<String> visitedPages;
     private final List<CrawlResult> resultsList;
@@ -123,7 +126,7 @@ public class WebCrawler {
     }
 
     private void logCrawlingProgress(String url, int depth) {
-        System.out.printf("Crawling at %s (depth %d)\n", url, depth);
+        logger.info("Crawling at %s (depth %d)\n", url, depth);
     }
 
     private CrawlResult processAndStorePage(String url, int depth, URL parentUrl) {

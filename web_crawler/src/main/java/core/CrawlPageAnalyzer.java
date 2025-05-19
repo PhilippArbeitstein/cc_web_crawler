@@ -21,7 +21,6 @@ public class CrawlPageAnalyzer {
     private final PageLoader fetcher;
     private final int MAX_HEADING_LEVEL = 6;
     private final Predicate<String> isNotEmpty = text -> !text.isEmpty();
-
     public CrawlPageAnalyzer(PageLoader fetcher) {
         this.fetcher = fetcher;
     }
