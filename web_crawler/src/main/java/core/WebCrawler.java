@@ -5,10 +5,7 @@ import model.CrawlResult;
 import util.WebCrawlerUtils;
 
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /*
@@ -58,14 +55,21 @@ public class WebCrawler {
     }
 
     private boolean canCrawl(String url, int currentDepth, URL rootStartUrl) {
-        String normalizedUrl = WebCrawlerUtils.normalizeUrl(url);
+        Optional<String> normalizedUrlOpt = WebCrawlerUtils.normalizeUrl(url);
+        if (normalizedUrlOpt.isEmpty()) {
+            return false;
+        }
+
+        String normalizedUrl = normalizedUrlOpt.get();
         return isValidUrlForCrawl(url, currentDepth) && !handleAlreadyVisited(normalizedUrl, rootStartUrl);
     }
 
+
     private void markUrlAsVisited(String url) {
-        String normalizedUrl = WebCrawlerUtils.normalizeUrl(url);
-        markPageAsVisited(normalizedUrl);
+        Optional<String> normalizedUrlOpt = WebCrawlerUtils.normalizeUrl(url);
+        normalizedUrlOpt.ifPresent(this::markPageAsVisited);
     }
+
 
 
     private CrawlResult processPage(String url, int depth, URL parentUrl) {
@@ -82,10 +86,10 @@ public class WebCrawler {
         if (currentDepth > config.maxDepth()) return false;
         if (url.isEmpty()) return false;
 
-        String normalized = WebCrawlerUtils.normalizeUrl(url);
-        if (!WebCrawlerUtils.isDomainAllowed(normalized, config.crawlableDomains())) return false;
-
-        return true;
+        Optional<String> normalizedOpt = WebCrawlerUtils.normalizeUrl(url);
+        return normalizedOpt
+                .filter(normalized -> WebCrawlerUtils.isDomainAllowed(normalized, config.crawlableDomains()))
+                .isPresent();
     }
 
     private boolean handleAlreadyVisited(String normalizedUrl, URL rootUrl) {
@@ -128,11 +132,10 @@ public class WebCrawler {
 
     private void submitChildLinks(List<String> links, int nextDepth, URL rootUrl) {
         for (String link : links) {
-            String normalizedLink = WebCrawlerUtils.normalizeUrl(link);
-            if (!normalizedLink.isEmpty()) {
-                submitCrawlTask(link, nextDepth, rootUrl);
-            }
+            Optional<String> normalizedLinkOpt = WebCrawlerUtils.normalizeUrl(link);
+            normalizedLinkOpt.ifPresent(normalizedLink -> submitCrawlTask(normalizedLink, nextDepth, rootUrl));
         }
     }
+
 }
 

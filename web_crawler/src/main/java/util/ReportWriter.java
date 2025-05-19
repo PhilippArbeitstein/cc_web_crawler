@@ -1,6 +1,9 @@
 package util;
 
+import exceptions.ReportFileException;
 import model.CrawlResult;
+
+import java.io.IOException;
 import java.net.URL;
 import java.util.Comparator;
 import java.util.List;
@@ -15,8 +18,12 @@ public class ReportWriter {
 
     public ReportWriter(String reportPath) {
         this.reportPath = reportPath;
-        ReportFile.clearFile(reportPath);
-    }
+        try {
+            ReportFile.clearFile(reportPath);
+        } catch (ReportFileException e) {
+            System.err.println("Failed to clear report file: " + reportPath);
+            e.printStackTrace();
+        }    }
 
     public void writeReport(List<CrawlResult> pages, URL rootUrl) {
         writeReportHeader(rootUrl);
@@ -65,6 +72,11 @@ public class ReportWriter {
     }
 
     private void writeLine(String content) {
-        ReportFile.appendToReport(reportPath, content);
+        try {
+            ReportFile.appendToReport(reportPath, content);
+        } catch (ReportFileException e) {
+            System.err.println("Failed to append to report file: " + reportPath);
+            e.printStackTrace();
+        }
     }
 }

@@ -3,10 +3,11 @@ package util;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Set;
+import java.util.Optional;
 
 public class WebCrawlerUtils {
 
-    public static String normalizeUrl(String urlString) {
+    public static Optional<String> normalizeUrl(String urlString) {
         try {
             URL url = new URL(urlString);
             String path = url.getPath().replaceAll("/$", "");
@@ -17,11 +18,12 @@ public class WebCrawlerUtils {
             }
 
             String normalizedUrl = url.getProtocol() + "://" + host + path;
-            return normalizedUrl;
+            return Optional.of(normalizedUrl);
         } catch (MalformedURLException e) {
-            return "";
+            return Optional.empty();
         }
     }
+
     public static boolean isDomainAllowed(String urlString, Set<String> allowedDomains) {
         try {
             URL url = new URL(urlString);
