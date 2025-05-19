@@ -9,13 +9,27 @@ import java.util.Optional;
  */
 public class Markdown {
     public static String createHeading(String text, int level, int depth) {
-        return "#".repeat(level) + " \t" + "-".repeat(depth) + "> \t" + text;
+        StringBuilder heading = new StringBuilder();
+        heading.append("#".repeat(level))
+                .append(" \t")
+                .append("-".repeat(depth))
+                .append("> \t")
+                .append(text);
+
+        return heading.toString();
     }
 
     public static String createLinkInfo(String url, int depth, boolean isBroken) {
+        StringBuilder linkInfo = new StringBuilder();
         String prefix = "-".repeat(depth) + "> ";
         String type = isBroken ? "broken link" : "link to";
-        return "<br>" + prefix + type + " <a>" + url + " </a>";
+
+        linkInfo.append("<br>")
+                .append(prefix)
+                .append(type)
+                .append(" <a>").append(url).append(" </a>");
+
+        return linkInfo.toString();
     }
 
     public static Optional<String> extractHeading(String raw, int depth) {

@@ -19,7 +19,6 @@ public class Main {
     private static final int MIN_REQUIRED_ARGS = 3;
     private static final int MIN_DEPTH = 0;
     private static final String REPORT_FILENAME = "report.md";
-
     private static final int THREAD_POOL_SIZE = 20;
 
     public static void main(String[] args) {
