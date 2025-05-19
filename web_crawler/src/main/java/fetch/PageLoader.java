@@ -1,5 +1,6 @@
 package fetch;
 
+import exceptions.PageLoadException;
 import org.jsoup.nodes.Document;
 
 public interface PageLoader {
@@ -10,5 +11,5 @@ public interface PageLoader {
      * @return the parsed HTML as a Jsoup Document
      * @throws Exception  Exception if an error occurs during loading or parsing
      */
-    Document loadPage(String url) throws Exception;
+    JsoupHtmlDocument loadPage(String url) throws PageLoadException;
 }

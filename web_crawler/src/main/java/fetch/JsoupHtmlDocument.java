@@ -1,5 +1,11 @@
 package fetch;
 
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class JsoupHtmlDocument implements HtmlDocument {
     private final Document document;
 

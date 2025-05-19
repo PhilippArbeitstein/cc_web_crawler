@@ -1,8 +1,8 @@
 package core;
 
+import fetch.HtmlDocument;
 import fetch.PageLoader;
 import model.CrawlResult;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.util.ArrayList;
@@ -19,7 +19,6 @@ public class CrawlPageAnalyzer {
     private final PageLoader fetcher;
     private final int maxHeadingLevel = 6;
     private final Predicate<String> isNotEmpty = text -> !text.isEmpty();
-    private final Function<Element, String> extractText = element -> element.text().trim();
 
     public CrawlPageAnalyzer(PageLoader fetcher) {
         this.fetcher = fetcher;
@@ -34,7 +33,7 @@ public class CrawlPageAnalyzer {
         page.isFetchFailed = false;
 
         try {
-            Document document = fetcher.loadPage(url);
+            HtmlDocument document = fetcher.loadPage(url);
             page.headings = extractFormattedHeadings(document);
             page.childLinks = extractValidLinks(document);
         } catch (Exception e) {
@@ -45,7 +44,7 @@ public class CrawlPageAnalyzer {
         return page;
     }
 
-    private List<String> extractFormattedHeadings(Document document) {
+    private List<String> extractFormattedHeadings(HtmlDocument document) {
         List<String> headings = new ArrayList<>();
         for (int headingLevel = 1; headingLevel <= maxHeadingLevel; headingLevel++) {
             headings.addAll(extractHeadingsAtLevel(document, headingLevel));
@@ -53,19 +52,21 @@ public class CrawlPageAnalyzer {
         return headings;
     }
 
-    private List<String> extractHeadingsAtLevel(Document document, int level) {
+    private List<String> extractHeadingsAtLevel(HtmlDocument document, int level) {
         Function<String, String> prefixWithHeadingLevel = text -> "h" + level + ":" + text;
 
-        return document.select("h" + level).stream()
-                .map(extractText)
+        String rawText = document.select("h" + level);
+        return List.of(rawText.split("\\r?\\n")).stream()
+                .map(String::trim)
                 .filter(isNotEmpty)
                 .map(prefixWithHeadingLevel)
                 .toList();
     }
 
-    private List<String> extractValidLinks(Document document) {
-        return document.select("a[href]").stream()
-                .map(this::normalizeHref)
+    private List<String> extractValidLinks(HtmlDocument document) {
+        return document.getLinks().stream()
+                .map(String::trim)
+                .map(String::toLowerCase)
                 .filter(isNotEmpty)
                 .toList();
     }
