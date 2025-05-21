@@ -2,8 +2,6 @@ package core;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-
-import java.lang.reflect.Field;
 import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.*;
