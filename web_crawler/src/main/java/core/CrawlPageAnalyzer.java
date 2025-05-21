@@ -45,7 +45,7 @@ public class CrawlPageAnalyzer {
         return page;
     }
 
-    private List<String> extractFormattedHeadings(HtmlDocument document) {
+    protected List<String> extractFormattedHeadings(HtmlDocument document) {
         List<String> headings = new ArrayList<>();
         for (int headingLevel = 1; headingLevel <= MAX_HEADING_LEVEL; headingLevel++) {
             headings.addAll(extractHeadingsAtLevel(document, headingLevel));
@@ -53,7 +53,7 @@ public class CrawlPageAnalyzer {
         return headings;
     }
 
-    private List<String> extractHeadingsAtLevel(HtmlDocument document, int level) {
+    protected List<String> extractHeadingsAtLevel(HtmlDocument document, int level) {
         String rawText = document.select("h" + level);
         return List.of(rawText.split("\\r?\\n")).stream()
                 .map(String::trim)
@@ -63,7 +63,7 @@ public class CrawlPageAnalyzer {
 
     }
 
-    private List<String> extractValidLinks(HtmlDocument document) {
+    protected List<String> extractValidLinks(HtmlDocument document) {
         return document.getLinks().stream()
                 .map(String::trim)
                 .map(String::toLowerCase)
