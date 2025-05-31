@@ -26,7 +26,7 @@ class CrawlPageAnalyzerTest {
     }
 
     @Test
-    void processPage_successfulLoad_extractsData() throws Exception {
+    void processPage_successfulLoad_extractsData() {
         when(mockLoader.loadPage("https://test.com")).thenReturn(mockDoc);
         when(mockDoc.select("h1")).thenReturn("Heading 1");
         when(mockDoc.select("h2")).thenReturn("");
@@ -49,7 +49,7 @@ class CrawlPageAnalyzerTest {
     }
 
     @Test
-    void processPage_fetchFails_setsFailureFlag() throws Exception {
+    void processPage_fetchFails_setsFailureFlag() {
         when(mockLoader.loadPage("https://fail.com"))
                 .thenThrow(new PageLoadException("fail", null));
 

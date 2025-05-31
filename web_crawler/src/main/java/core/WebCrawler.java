@@ -101,11 +101,9 @@ public class WebCrawler {
     }
 
     protected boolean handleAlreadyVisited(String normalizedUrl, URL rootUrl) {
-        synchronized (visitedPages) {
-            if (!visitedPages.contains(normalizedUrl)) return false;
-            addStartUrlToExistingPage(normalizedUrl, rootUrl);
-            return true;
-        }
+        if (!visitedPages.contains(normalizedUrl)) return false;
+        addStartUrlToExistingPage(normalizedUrl, rootUrl);
+        return true;
     }
 
     protected void addStartUrlToExistingPage(String normalizedUrl, URL rootStartUrl) {
