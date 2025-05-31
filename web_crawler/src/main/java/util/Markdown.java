@@ -41,7 +41,7 @@ public class Markdown {
         return Optional.of(createHeading(text, level, depth));
     }
 
-    private static boolean isInvalidHeadingFormat(String raw) {
+    protected static boolean isInvalidHeadingFormat(String raw) {
         return raw == null || !raw.matches("h[1-6]:.*");
     }
 }

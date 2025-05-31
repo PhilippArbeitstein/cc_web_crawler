@@ -34,47 +34,47 @@ public class ReportWriter {
         writePagesToReport(sortedPages);
     }
 
-    private void writeReportHeader(URL rootUrl) {
+    protected void writeReportHeader(URL rootUrl) {
         writeLine(Markdown.createHeading("Crawled Website Report", 1, 0));
         writeLine(Markdown.createHeading("Results for: " + rootUrl, 2, 0));
     }
 
-    private List<CrawlResult> sortPagesByDepth(List<CrawlResult> pages) {
+    protected List<CrawlResult> sortPagesByDepth(List<CrawlResult> pages) {
         return pages.stream()
                 .sorted(Comparator.comparingInt(p -> p.currentDepth))
                 .toList();
     }
 
-    private void writePagesToReport(List<CrawlResult> pages) {
+    protected void writePagesToReport(List<CrawlResult> pages) {
         for (CrawlResult page : pages) {
             writePageLinkInfo(page);
             writePageHeadings(page);
         }
     }
 
-    private void writePageLinkInfo(CrawlResult page) {
+    protected void writePageLinkInfo(CrawlResult page) {
         writeLine(Markdown.createLinkInfo(page.pageUrl, page.currentDepth, page.isFetchFailed));
         writeLine("<br>depth:" + page.currentDepth);
     }
 
-    private void writePageHeadings(CrawlResult page) {
+    protected void writePageHeadings(CrawlResult page) {
         if (hasNoHeadings(page)) return;
         for (String heading : page.headings) {
             writeParsedHeadingIfValid(heading, page.currentDepth);
         }
     }
 
-    private boolean hasNoHeadings(CrawlResult page) {
+    protected boolean hasNoHeadings(CrawlResult page) {
         return page.headings == null || page.headings.isEmpty();
     }
 
-    private void writeParsedHeadingIfValid(String rawHeading, int depth) {
+    protected void writeParsedHeadingIfValid(String rawHeading, int depth) {
         Markdown.extractHeading(rawHeading, depth)
                 .ifPresent(this::writeLine);
 
     }
 
-    private void writeLine(String content) {
+    protected void writeLine(String content) {
         try {
             ReportFile.appendToReport(reportPath, content);
         } catch (ReportFileException e) {

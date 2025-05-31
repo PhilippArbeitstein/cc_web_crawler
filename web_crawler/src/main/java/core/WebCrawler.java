@@ -39,14 +39,14 @@ public class WebCrawler {
         return resultsList;
     }
 
-    private void submitCrawlTask(String url, int depth, URL rootStartUrl) {
+    protected void submitCrawlTask(String url, int depth, URL rootStartUrl) {
         crawlTaskExecutor.submitTask(() -> {
             crawlRecursively(url, depth, rootStartUrl);
             return null;
         });
     }
 
-    private void crawlRecursively(String url, int currentDepth, URL rootStartUrl) {
+    protected void crawlRecursively(String url, int currentDepth, URL rootStartUrl) {
         if (!canCrawl(url, currentDepth, rootStartUrl)) {
             return;
         }
@@ -58,7 +58,7 @@ public class WebCrawler {
         handleChildLinks(result, currentDepth + 1, rootStartUrl);
     }
 
-    private boolean canCrawl(String url, int currentDepth, URL rootStartUrl) {
+    protected boolean canCrawl(String url, int currentDepth, URL rootStartUrl) {
         Optional<String> normalizedUrlOpt = WebCrawlerUtils.normalizeUrl(url);
         if (normalizedUrlOpt.isEmpty()) {
             return false;
@@ -69,18 +69,16 @@ public class WebCrawler {
     }
 
 
-    private void markUrlAsVisited(String url) {
+    protected void markUrlAsVisited(String url) {
         Optional<String> normalizedUrlOpt = WebCrawlerUtils.normalizeUrl(url);
         normalizedUrlOpt.ifPresent(this::markPageAsVisited);
     }
 
-
-
-    private CrawlResult processPage(String url, int depth, URL parentUrl) {
+    protected CrawlResult processPage(String url, int depth, URL parentUrl) {
         return processAndStorePage(url, depth, parentUrl);
     }
 
-    private void handleChildLinks(CrawlResult result, int nextDepth, URL rootUrl) {
+    protected void handleChildLinks(CrawlResult result, int nextDepth, URL rootUrl) {
         if (!shouldSkipChildLinks(result)) {
             submitChildLinks(result.childLinks, nextDepth, rootUrl);
         }
@@ -102,15 +100,13 @@ public class WebCrawler {
                 .isPresent();
     }
 
-    private boolean handleAlreadyVisited(String normalizedUrl, URL rootUrl) {
-        synchronized (visitedPages) {
-            if (!visitedPages.contains(normalizedUrl)) return false;
-            addStartUrlToExistingPage(normalizedUrl, rootUrl);
-            return true;
-        }
+    protected boolean handleAlreadyVisited(String normalizedUrl, URL rootUrl) {
+        if (!visitedPages.contains(normalizedUrl)) return false;
+        addStartUrlToExistingPage(normalizedUrl, rootUrl);
+        return true;
     }
 
-    private void addStartUrlToExistingPage(String normalizedUrl, URL rootStartUrl) {
+    protected void addStartUrlToExistingPage(String normalizedUrl, URL rootStartUrl) {
         synchronized (resultsList) {
             for (CrawlResult result : resultsList) {
                 if (normalizedUrl.equals(WebCrawlerUtils.normalizeUrl(result.pageUrl))) {
@@ -121,31 +117,30 @@ public class WebCrawler {
         }
     }
 
-    private void markPageAsVisited(String normalizedUrl) {
+    protected void markPageAsVisited(String normalizedUrl) {
         visitedPages.add(normalizedUrl);
     }
 
-    private void logCrawlingProgress(String url, int depth) {
-        logger.info("Crawling at %s (depth %d)\n", url, depth);
+    protected void logCrawlingProgress(String url, int depth) {
+        logger.info("Crawling at {} (depth {})", url, depth);
     }
 
-    private CrawlResult processAndStorePage(String url, int depth, URL parentUrl) {
+    protected CrawlResult processAndStorePage(String url, int depth, URL parentUrl) {
         CrawlResult result = crawlPageAnalyzer.processPage(url, depth);
         result.parentUrls.add(parentUrl);
         resultsList.add(result);
         return result;
     }
 
-    private boolean shouldSkipChildLinks(CrawlResult result) {
+    protected boolean shouldSkipChildLinks(CrawlResult result) {
         return result.isFetchFailed || result.childLinks == null;
     }
 
-    private void submitChildLinks(List<String> links, int nextDepth, URL rootUrl) {
+    protected void submitChildLinks(List<String> links, int nextDepth, URL rootUrl) {
         for (String link : links) {
             Optional<String> normalizedLinkOpt = WebCrawlerUtils.normalizeUrl(link);
             normalizedLinkOpt.ifPresent(normalizedLink -> submitCrawlTask(normalizedLink, nextDepth, rootUrl));
         }
     }
-
 }
 

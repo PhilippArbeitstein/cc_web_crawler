@@ -22,6 +22,11 @@ public class CrawlTaskExecutor {
         this.executor = Executors.newFixedThreadPool(threadPoolSize);
         this.completionService = new ExecutorCompletionService<>(executor);
     }
+    public CrawlTaskExecutor(ExecutorService executor) {
+        this.executor = executor;
+        this.completionService = new ExecutorCompletionService<>(executor);
+    }
+
 
     public void submitTask(Callable<Void> task) {
         taskCount.incrementAndGet();
