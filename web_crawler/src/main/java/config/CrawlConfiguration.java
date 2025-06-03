@@ -31,12 +31,12 @@ public record CrawlConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<St
         this.crawlableDomains = processDomains(crawlableDomains);
     }
 
-    public Set<String> processDomains(Set<String> rawDomains) throws IllegalArgumentException {
+    protected Set<String> processDomains(Set<String> rawDomains) throws IllegalArgumentException {
         Set<String> normalizedDomains = normalizeDomains(rawDomains);
         return extractValidDomains(normalizedDomains);
     }
 
-    private Set<String> normalizeDomains(Set<String> rawDomains) {
+    protected Set<String> normalizeDomains(Set<String> rawDomains) {
         Set<String> normalizedDomains = new HashSet<>();
         for (String domain : rawDomains) {
             String trimmedDomain = domain.trim().toLowerCase();
@@ -45,13 +45,13 @@ public record CrawlConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<St
         return normalizedDomains;
     }
 
-    private void addDomainIfNotEmpty(String domain, Set<String> domainsSet) {
+    protected void addDomainIfNotEmpty(String domain, Set<String> domainsSet) {
         if (!domain.isEmpty()) {
             domainsSet.add(domain);
         }
     }
 
-    private Set<String> extractValidDomains(Set<String> normalizedDomains) throws IllegalArgumentException {
+    protected Set<String> extractValidDomains(Set<String> normalizedDomains) throws IllegalArgumentException {
         Set<String> validDomains = new HashSet<>();
         for (String domain : normalizedDomains) {
             extractHostFromDomain(domain).ifPresent(validDomains::add);
@@ -63,7 +63,7 @@ public record CrawlConfiguration(URL rootUrl, Optional<Integer> maxDepth, Set<St
         return validDomains;
     }
 
-    private Optional<String> extractHostFromDomain(String domain) {
+    protected Optional<String> extractHostFromDomain(String domain) {
         try {
             URL url = new URL(domain);
             return Optional.of(url.getHost());

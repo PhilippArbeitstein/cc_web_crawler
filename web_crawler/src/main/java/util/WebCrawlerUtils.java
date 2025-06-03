@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.Optional;
 
 public class WebCrawlerUtils {
-
     public static Optional<String> normalizeUrl(String urlString) {
         try {
             URL url = new URL(urlString);
