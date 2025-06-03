@@ -18,7 +18,7 @@ class JsoupPageLoaderTest {
 
     @Test
     void loadPageReturnsHtmlDocument() throws Exception {
-        try (MockedStatic<Jsoup> jsoupMock = mockJsoup("https://example.com", false)) {
+        try (MockedStatic<Jsoup> ignored = mockJsoup("https://example.com", false)) {
             HtmlDocument result = loader.loadPage("https://example.com");
             assertTrue(result instanceof JsoupHtmlDocument);
         }
@@ -26,7 +26,7 @@ class JsoupPageLoaderTest {
 
     @Test
     void loadPageThrowsPageLoadExceptionOnError() throws Exception {
-        try (MockedStatic<Jsoup> jsoupMock = mockJsoup("https://fail.com", true)) {
+        try (MockedStatic<Jsoup> ignored = mockJsoup("https://fail.com", true)) {
             assertThrows(PageLoadException.class, () -> loader.loadPage("https://fail.com"));
         }
     }

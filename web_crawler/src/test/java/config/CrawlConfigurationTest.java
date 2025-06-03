@@ -97,7 +97,7 @@ class CrawlConfigurationTest {
     }
 
     @Test
-    void testExtractValidDomainsWithValidURLs() throws Exception {
+    void testExtractValidDomainsWithValidURLs() {
         CrawlConfiguration config = new CrawlConfiguration(rootUrl, Optional.of(3), validDomains);
 
         Set<String> validExtractedDomains = config.extractValidDomains(validDomains);
